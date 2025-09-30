@@ -171,6 +171,7 @@ export default function Chat() {
         title: generateConversationTitle(updatedMessages),
         messages: updatedMessages,
         model: selectedModel,
+        projectId: null, // Start in Miscellaneous, will be categorized after title generation
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
