@@ -8,6 +8,7 @@ import ProjectSection from './ProjectSection';
 import ProjectModal from './ProjectModal';
 import MoveConversationModal from './MoveConversationModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import ConversationDropdown from './ConversationDropdown';
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -44,6 +45,10 @@ export default function Sidebar({
   const [movingConversation, setMovingConversation] = useState<Conversation | null>(null);
   const [deleteProjectModalOpen, setDeleteProjectModalOpen] = useState(false);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+
+  // Dropdown state
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+  const [dropdownConversation, setDropdownConversation] = useState<Conversation | null>(null);
 
   // Load projects and expand state from localStorage
   useEffect(() => {
@@ -156,6 +161,22 @@ export default function Sidebar({
     if (movingConversation) {
       storage.updateConversationProject(movingConversation.id, projectId);
       // No need to update state here - parent will refresh via onSelectConversation
+    }
+  };
+
+  const handleDropdownClick = (conversation: Conversation, buttonElement: HTMLButtonElement) => {
+    if (menuOpenId === conversation.id) {
+      setMenuOpenId(null);
+      setDropdownPosition(null);
+      setDropdownConversation(null);
+    } else {
+      const rect = buttonElement.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+      setMenuOpenId(conversation.id);
+      setDropdownConversation(conversation);
     }
   };
 
@@ -365,7 +386,7 @@ export default function Sidebar({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setMenuOpenId(menuOpenId === conversation.id ? null : conversation.id);
+                                handleDropdownClick(conversation, e.currentTarget);
                               }}
                               className="p-1 rounded-claude-sm hover:bg-pure-black/5 dark:hover:bg-pure-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
@@ -373,54 +394,6 @@ export default function Sidebar({
                                 <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                               </svg>
                             </button>
-
-                            {/* Dropdown menu */}
-                            {menuOpenId === conversation.id && (
-                              <>
-                                <div
-                                  className="fixed inset-0 z-[100]"
-                                  onClick={() => setMenuOpenId(null)}
-                                />
-                                <div className="absolute right-0 mt-1 w-48 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 py-1 z-[110]">
-                                  <button
-                                    onClick={() => handleRenameStart(conversation)}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                                  >
-                                    Rename
-                                  </button>
-                                  <button
-                                    onClick={() => handleExport(conversation, 'markdown')}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                                  >
-                                    Export as Markdown
-                                  </button>
-                                  <button
-                                    onClick={() => handleExport(conversation, 'json')}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                                  >
-                                    Export as JSON
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      handleMoveConversationClick(conversation);
-                                      setMenuOpenId(null);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                                  >
-                                    Move to project...
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      onDeleteConversation(conversation.id);
-                                      setMenuOpenId(null);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-electric-yellow dark:text-electric-yellow hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              </>
-                            )}
                           </div>
                         </>
                       )}
@@ -465,6 +438,23 @@ export default function Sidebar({
         message={`Are you sure you want to delete "${deletingProject?.name}"? All conversations in this project will be moved to Miscellaneous.`}
         confirmText="Delete Project"
       />
+
+      {/* Fixed positioned dropdown for miscellaneous conversations */}
+      {dropdownConversation && (
+        <ConversationDropdown
+          conversation={dropdownConversation}
+          isOpen={!!menuOpenId}
+          position={dropdownPosition}
+          onClose={() => {
+            setMenuOpenId(null);
+            setDropdownPosition(null);
+            setDropdownConversation(null);
+          }}
+          onRename={handleRenameStart}
+          onMove={handleMoveConversationClick}
+          onDelete={onDeleteConversation}
+        />
+      )}
     </>
   );
 }

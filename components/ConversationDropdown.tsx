@@ -1,0 +1,99 @@
+'use client';
+
+import { Conversation } from '@/types/chat';
+import { exportConversationAsMarkdown, exportConversationAsJSON, downloadFile } from '@/lib/utils';
+
+interface ConversationDropdownProps {
+  conversation: Conversation;
+  isOpen: boolean;
+  position: { top: number; right: number } | null;
+  onClose: () => void;
+  onRename: (conversation: Conversation) => void;
+  onMove?: (conversation: Conversation) => void;
+  onDelete: (id: string) => void;
+}
+
+export default function ConversationDropdown({
+  conversation,
+  isOpen,
+  position,
+  onClose,
+  onRename,
+  onMove,
+  onDelete,
+}: ConversationDropdownProps) {
+  if (!isOpen || !position) return null;
+
+  const handleExport = (format: 'markdown' | 'json') => {
+    const content = format === 'markdown'
+      ? exportConversationAsMarkdown(conversation)
+      : exportConversationAsJSON(conversation);
+
+    const extension = format === 'markdown' ? 'md' : 'json';
+    const filename = `${conversation.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${extension}`;
+
+    downloadFile(content, filename, format === 'markdown' ? 'text/markdown' : 'application/json');
+    onClose();
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-[100]"
+        onClick={onClose}
+      />
+
+      {/* Dropdown menu with fixed positioning */}
+      <div
+        className="fixed w-48 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black dark:border-pure-white py-1 z-[110]"
+        style={{
+          top: `${position.top}px`,
+          right: `${position.right}px`,
+        }}
+      >
+        <button
+          onClick={() => {
+            onRename(conversation);
+            onClose();
+          }}
+          className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
+        >
+          Rename
+        </button>
+        <button
+          onClick={() => handleExport('markdown')}
+          className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
+        >
+          Export as Markdown
+        </button>
+        <button
+          onClick={() => handleExport('json')}
+          className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
+        >
+          Export as JSON
+        </button>
+        {onMove && (
+          <button
+            onClick={() => {
+              onMove(conversation);
+              onClose();
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
+          >
+            Move to project...
+          </button>
+        )}
+        <button
+          onClick={() => {
+            onDelete(conversation.id);
+            onClose();
+          }}
+          className="w-full text-left px-4 py-2 text-sm text-electric-yellow dark:text-electric-yellow hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+    </>
+  );
+}

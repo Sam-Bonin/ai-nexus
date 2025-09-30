@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Conversation, Project } from '@/types/chat';
+import ConversationDropdown from './ConversationDropdown';
 
 interface ProjectSectionProps {
   project: Project;
@@ -34,7 +35,25 @@ export default function ProjectSection({
   const [editingTitle, setEditingTitle] = useState('');
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
+  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const handleMenuClick = (conversation: Conversation, buttonElement: HTMLButtonElement) => {
+    if (menuOpenId === conversation.id) {
+      setMenuOpenId(null);
+      setMenuPosition(null);
+      setActiveConversation(null);
+    } else {
+      const rect = buttonElement.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+      setMenuOpenId(conversation.id);
+      setActiveConversation(conversation);
+    }
+  };
 
   const handleRenameStart = (conversation: Conversation) => {
     setEditingId(conversation.id);
@@ -58,7 +77,7 @@ export default function ProjectSection({
       <div className="relative group">
         <button
           onClick={onToggle}
-          className={`w-full text-left px-3 py-2 rounded-claude-sm transition-colors cursor-pointer border-l-4 flex items-center justify-between ${
+          className={`w-full text-left px-3 py-2 pr-10 rounded-claude-sm transition-colors cursor-pointer border-l-4 flex items-center justify-between ${
             isExpanded
               ? 'bg-white dark:bg-pure-white/5 shadow-claude-sm'
               : 'hover:bg-pure-black/5 dark:hover:bg-pure-white/5'
@@ -78,17 +97,17 @@ export default function ProjectSection({
             <span className="text-sm font-semibold text-pure-black dark:text-pure-white tracking-tight truncate">
               {project.name}
             </span>
+            <span
+              className="px-2 py-0.5 rounded-full bg-electric-yellow/10 dark:bg-electric-yellow/20 text-xs font-medium text-pure-black dark:text-pure-white flex-shrink-0"
+            >
+              {conversations.length}
+            </span>
           </div>
-          <span
-            className="px-2 py-0.5 rounded-full bg-electric-yellow/10 dark:bg-electric-yellow/20 text-xs font-medium text-pure-black dark:text-pure-white flex-shrink-0"
-          >
-            {conversations.length}
-          </span>
         </button>
 
         {/* Project menu button */}
         {(onEditProject || onDeleteProject) && (
-          <div className="absolute top-2 right-2">
+          <div className="absolute inset-y-0 right-2 flex items-center">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -105,17 +124,17 @@ export default function ProjectSection({
             {projectMenuOpen && (
               <>
                 <div
-                  className="fixed inset-0 z-[100]"
+                  className="fixed inset-0 z-[200]"
                   onClick={() => setProjectMenuOpen(false)}
                 />
-                <div className="absolute right-0 mt-1 w-40 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 py-1 z-[110]">
+                <div className="absolute right-0 top-full mt-1 w-40 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black dark:border-pure-white py-1 z-[210]">
                   {onEditProject && (
                     <button
                       onClick={() => {
                         onEditProject(project);
                         setProjectMenuOpen(false);
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
                     >
                       Edit Project
                     </button>
@@ -197,7 +216,7 @@ export default function ProjectSection({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setMenuOpenId(menuOpenId === conversation.id ? null : conversation.id);
+                          handleMenuClick(conversation, e.currentTarget);
                         }}
                         className="p-1 rounded-claude-sm hover:bg-pure-black/5 dark:hover:bg-pure-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
@@ -205,44 +224,6 @@ export default function ProjectSection({
                           <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                         </svg>
                       </button>
-
-                      {/* Dropdown menu */}
-                      {menuOpenId === conversation.id && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-[100]"
-                            onClick={() => setMenuOpenId(null)}
-                          />
-                          <div className="absolute right-0 mt-1 w-48 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 py-1 z-[110]">
-                            <button
-                              onClick={() => handleRenameStart(conversation)}
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                            >
-                              Rename
-                            </button>
-                            {onMoveConversation && (
-                              <button
-                                onClick={() => {
-                                  onMoveConversation(conversation);
-                                  setMenuOpenId(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                              >
-                                Move to project...
-                              </button>
-                            )}
-                            <button
-                              onClick={() => {
-                                onDeleteConversation(conversation.id);
-                                setMenuOpenId(null);
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-electric-yellow dark:text-electric-yellow hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
                     </div>
                   </>
                 )}
@@ -251,6 +232,23 @@ export default function ProjectSection({
           )}
         </div>
       </div>
+
+      {/* Fixed positioned dropdown */}
+      {activeConversation && (
+        <ConversationDropdown
+          conversation={activeConversation}
+          isOpen={!!menuOpenId}
+          position={menuPosition}
+          onClose={() => {
+            setMenuOpenId(null);
+            setMenuPosition(null);
+            setActiveConversation(null);
+          }}
+          onRename={handleRenameStart}
+          onMove={onMoveConversation}
+          onDelete={onDeleteConversation}
+        />
+      )}
     </div>
   );
 }
