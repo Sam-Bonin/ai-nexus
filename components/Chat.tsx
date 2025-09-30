@@ -89,13 +89,13 @@ export default function Chat() {
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = '72px';
+      textareaRef.current.style.height = '56px';
       const newHeight = Math.min(textareaRef.current.scrollHeight, 300);
       textareaRef.current.style.height = newHeight + 'px';
       textareaRef.current.style.overflowY = newHeight >= 300 ? 'auto' : 'hidden';
 
       // Track if textarea has grown beyond single line
-      setIsMultiline(newHeight > 72);
+      setIsMultiline(newHeight > 64);
     }
   }, [input]);
 
@@ -1091,7 +1091,7 @@ export default function Chat() {
               </div>
             )}
 
-            <div className="relative bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 focus-within:border-electric-yellow dark:focus-within:border-electric-yellow focus-within:shadow-electric-yellow/20 transition-all">
+            <div className="relative bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 focus-within:border-electric-yellow dark:focus-within:border-electric-yellow focus-within:shadow-electric-yellow/20 transition-all flex items-center">
               <input
                 id={fileInputId}
                 ref={fileInputRef}
@@ -1109,12 +1109,12 @@ export default function Chat() {
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 placeholder="Type your message..."
-                className="w-full px-5 pr-32 bg-transparent text-gray-900 dark:text-gray-100 placeholder-neutral-gray dark:placeholder-neutral-gray focus:outline-none resize-none max-h-[300px] rounded-claude-lg font-sans leading-[48px] overflow-y-hidden flex items-center"
+                className="w-full px-5 pr-32 py-5 bg-transparent text-gray-900 dark:text-gray-100 placeholder-neutral-gray dark:placeholder-neutral-gray focus:outline-none resize-none max-h-[300px] rounded-claude-lg font-sans leading-normal overflow-y-hidden"
                 disabled={isLoading}
                 rows={1}
-                style={{ height: '72px', paddingTop: '12px', paddingBottom: '12px' }}
+                style={{ minHeight: '56px' }}
               />
-              <div className={`absolute right-4 flex gap-2 transition-all ${isMultiline ? 'bottom-4' : 'top-1/2 -translate-y-1/2'}`}>
+              <div className={`absolute right-4 flex gap-2 transition-all ${isMultiline ? 'bottom-4' : ''}`}>
                 {isStreaming ? (
                   <button
                     type="button"

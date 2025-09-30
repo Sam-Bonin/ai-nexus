@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Conversation, Project } from '@/types/chat';
 import { storage } from '@/lib/storage';
@@ -197,22 +198,26 @@ export default function Sidebar({
         {/* Header */}
         <div className="p-4 border-b border-pure-black/10 dark:border-pure-white/10">
           <div className="mb-4">
-            <img
+            <Image
               src="/logo-light.png"
               alt="AI Nexus"
+              width={208}
+              height={50}
               className="w-52 h-auto block dark:hidden"
             />
-            <img
+            <Image
               src="/logo-dark.png"
               alt="AI Nexus"
+              width={208}
+              height={50}
               className="w-52 h-auto hidden dark:block"
             />
             <p className="text-xs text-neutral-gray dark:text-cloudy-400 mt-2 font-medium">Universal AI Interface</p>
           </div>
-          <div className="flex gap-2">
+          <div className="space-y-2">
             <button
               onClick={onNewChat}
-              className="flex-1 px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600 text-pure-black rounded-claude-sm transition-colors font-medium flex items-center justify-center gap-2 shadow-claude-sm"
+              className="w-full px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600 text-pure-black rounded-claude-sm transition-colors font-medium flex items-center justify-center gap-2 shadow-claude-sm"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -221,12 +226,12 @@ export default function Sidebar({
             </button>
             <button
               onClick={handleCreateProject}
-              className="px-3 py-2 bg-pure-black/5 dark:bg-pure-white/5 hover:bg-pure-black/10 dark:hover:bg-pure-white/10 text-pure-black dark:text-pure-white rounded-claude-sm transition-colors font-medium shadow-claude-sm"
-              title="Create Project"
+              className="w-full px-4 py-2 bg-pure-black/5 dark:bg-pure-white/5 hover:bg-pure-black/10 dark:hover:bg-pure-white/10 text-pure-black dark:text-pure-white rounded-claude-sm transition-colors font-medium shadow-claude-sm flex items-center justify-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
               </svg>
+              New Project
             </button>
           </div>
 
@@ -307,19 +312,28 @@ export default function Sidebar({
 
           {/* Miscellaneous section */}
           {miscellaneousConversations.length > 0 && (
-            <div className="mb-1 mt-2">
+            <div className="mb-1 mt-4">
+              {/* Separator line */}
+              <div className="flex items-center gap-2 px-3 mb-2">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-pure-black/10 dark:via-pure-white/10 to-transparent"></div>
+                <span className="text-xs font-normal text-neutral-gray/70 dark:text-cloudy-400">
+                  Uncategorized
+                </span>
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-pure-black/10 dark:via-pure-white/10 to-transparent"></div>
+              </div>
+
               {/* Miscellaneous Header */}
               <button
                 onClick={() => toggleProjectExpand('miscellaneous')}
-                className={`w-full text-left px-3 py-2 rounded-claude-sm transition-colors cursor-pointer border-l-4 border-neutral-gray flex items-center justify-between group ${
+                className={`w-full text-left px-3 py-2 rounded-claude-sm transition-colors cursor-pointer border-l-4 border-dashed border-cloudy-400 dark:border-cloudy-500 flex items-center justify-between group ${
                   expandedProjects.has('miscellaneous')
-                    ? 'bg-white dark:bg-pure-white/5 shadow-claude-sm'
-                    : 'hover:bg-pure-black/5 dark:hover:bg-pure-white/5'
+                    ? 'bg-cloudy-100/30 dark:bg-cloudy-900/10'
+                    : 'hover:bg-cloudy-100/20 dark:hover:bg-cloudy-900/10'
                 }`}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <svg
-                    className="w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform duration-200 flex-shrink-0"
+                    className="w-4 h-4 text-cloudy-500 dark:text-cloudy-400 transition-transform duration-200 flex-shrink-0"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -327,11 +341,22 @@ export default function Sidebar({
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                  <span className="text-sm font-semibold text-pure-black dark:text-pure-white tracking-tight truncate">
+
+                  {/* Inbox/Collection icon */}
+                  <svg
+                    className="w-4 h-4 text-cloudy-500 dark:text-cloudy-400 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+
+                  <span className="text-sm font-medium text-cloudy-600 dark:text-cloudy-300 tracking-tight truncate">
                     Miscellaneous
                   </span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-neutral-gray/10 dark:bg-neutral-gray/20 text-xs font-medium text-pure-black dark:text-pure-white flex-shrink-0">
+                <span className="px-2 py-0.5 rounded-full bg-cloudy-200/40 dark:bg-cloudy-700/30 text-xs font-medium text-cloudy-700 dark:text-cloudy-300 flex-shrink-0 border border-cloudy-300/30 dark:border-cloudy-600/30">
                   {miscellaneousConversations.length}
                 </span>
               </button>
@@ -347,10 +372,10 @@ export default function Sidebar({
                   {miscellaneousConversations.map((conversation) => (
                     <div
                       key={conversation.id}
-                      className={`group relative rounded-claude-sm transition-colors ml-6 ${
+                      className={`group relative rounded-claude-sm transition-colors ml-6 border-l-2 border-dashed ${
                         conversation.id === activeConversationId
-                          ? 'bg-white dark:bg-pure-white/5 shadow-claude-sm border border-electric-yellow/20'
-                          : 'hover:bg-white/50 dark:hover:bg-pure-white/5'
+                          ? 'bg-cloudy-100/40 dark:bg-cloudy-900/20 border-electric-yellow/40'
+                          : 'border-transparent hover:bg-cloudy-100/20 dark:hover:bg-cloudy-900/10 hover:border-cloudy-300/40 dark:hover:border-cloudy-600/40'
                       }`}
                     >
                       {editingId === conversation.id ? (
@@ -376,10 +401,10 @@ export default function Sidebar({
                             onClick={() => onSelectConversation(conversation.id)}
                             className="w-full text-left p-3 pr-10 block"
                           >
-                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                            <div className="text-sm font-medium text-cloudy-700 dark:text-cloudy-200 truncate">
                               {conversation.title}
                             </div>
-                            <div className="text-xs text-neutral-gray dark:text-neutral-gray mt-1">
+                            <div className="text-xs text-cloudy-500 dark:text-cloudy-400 mt-1">
                               {new Date(conversation.updatedAt).toLocaleDateString()}
                             </div>
                           </button>
@@ -391,9 +416,9 @@ export default function Sidebar({
                                 e.stopPropagation();
                                 handleDropdownClick(conversation, e.currentTarget);
                               }}
-                              className="p-1 rounded-claude-sm hover:bg-pure-black/5 dark:hover:bg-pure-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="p-1 rounded-claude-sm hover:bg-cloudy-200/40 dark:hover:bg-cloudy-800/40 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
-                              <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-5 h-5 text-cloudy-500 dark:text-cloudy-400" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                               </svg>
                             </button>

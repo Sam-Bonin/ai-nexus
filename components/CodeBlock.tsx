@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { Prism as SyntaxHighlighterType } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+const SyntaxHighlighter = SyntaxHighlighterType as any;
 
 interface CodeBlockProps {
   language: string;

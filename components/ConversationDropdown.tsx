@@ -36,6 +36,18 @@ export default function ConversationDropdown({
     onClose();
   };
 
+  // Calculate dropdown height (approximate: 4 items * 40px height + padding)
+  const dropdownHeight = onMove ? 200 : 160;
+  const viewportHeight = window.innerHeight;
+
+  // Check if dropdown would extend beyond viewport bottom
+  const wouldExtendBeyondBottom = position.top + dropdownHeight > viewportHeight;
+
+  // If it would extend beyond, position it above the button instead
+  const adjustedTop = wouldExtendBeyondBottom
+    ? Math.max(10, position.top - dropdownHeight - 8) // 8px gap from button
+    : position.top;
+
   return (
     <>
       {/* Backdrop */}
@@ -46,9 +58,9 @@ export default function ConversationDropdown({
 
       {/* Dropdown menu with fixed positioning */}
       <div
-        className="fixed w-48 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black dark:border-pure-white py-1 z-[110]"
+        className="fixed w-48 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black dark:border-pure-white py-1 z-[110] max-h-[80vh] overflow-y-auto"
         style={{
-          top: `${position.top}px`,
+          top: `${adjustedTop}px`,
           right: `${position.right}px`,
         }}
       >
