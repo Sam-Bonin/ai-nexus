@@ -101,12 +101,12 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-pure-black/50 dark:bg-pure-black/70 backdrop-blur-sm z-40 animate-in fade-in duration-200"
+        className="fixed inset-0 bg-pure-black/50 dark:bg-pure-black/70 backdrop-blur-sm z-[120] animate-in fade-in duration-200"
         onClick={handleCancel}
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 flex items-center justify-center z-[130] p-4">
         <div className="bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
           <h2 className="text-lg font-semibold text-pure-black dark:text-pure-white mb-4">
             {isEditing ? 'Edit Project' : 'Create New Project'}
