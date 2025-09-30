@@ -17,6 +17,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onDeleteConversation: (id: string) => void;
   onRenameConversation: (id: string, newTitle: string) => void;
+  onConversationsUpdate?: () => void;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -28,6 +29,7 @@ export default function Sidebar({
   onNewChat,
   onDeleteConversation,
   onRenameConversation,
+  onConversationsUpdate,
   isOpen,
   onToggle,
 }: SidebarProps) {
@@ -147,8 +149,8 @@ export default function Sidebar({
     if (deletingProject) {
       storage.deleteProject(deletingProject.id);
       setProjects(storage.getProjects());
-      // Refresh conversations to show they've moved to Miscellaneous
-      onNewChat(); // This will trigger a refresh in the parent
+      // Notify parent that conversations have been updated (moved to Miscellaneous)
+      onConversationsUpdate?.();
     }
   };
 
@@ -160,9 +162,8 @@ export default function Sidebar({
   const handleMoveConversation = (projectId: string | null) => {
     if (movingConversation) {
       storage.updateConversationProject(movingConversation.id, projectId);
-      // Force parent to refresh by selecting the conversation again
-      // This triggers Chat.tsx to reload from storage
-      onSelectConversation(movingConversation.id);
+      // Notify parent that conversations have been updated
+      onConversationsUpdate?.();
     }
   };
 

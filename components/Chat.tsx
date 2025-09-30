@@ -219,6 +219,10 @@ export default function Chat() {
     }
   };
 
+  const handleConversationsUpdate = () => {
+    setConversations(storage.getConversations());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -664,6 +668,7 @@ export default function Chat() {
         onNewChat={handleNewChat}
         onDeleteConversation={handleDeleteConversation}
         onRenameConversation={handleRenameConversation}
+        onConversationsUpdate={handleConversationsUpdate}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
