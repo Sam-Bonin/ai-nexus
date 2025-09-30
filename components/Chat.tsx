@@ -446,9 +446,101 @@ export default function Chat() {
             ? { ...conversation, title: fullTitle, updatedAt: finalized.updatedAt }
             : conversation
         )));
+
+        // After title generation, auto-categorize the conversation
+        categorizeConversation(conversationId);
       }
     } catch (error) {
       console.error('Error generating title:', error);
+    }
+  };
+
+  const categorizeConversation = async (conversationId: string) => {
+    try {
+      const conversation = storage.getConversation(conversationId);
+      if (!conversation) return;
+
+      // Only auto-categorize if still uncategorized (race condition prevention)
+      if (conversation.projectId !== null) {
+        console.log('Conversation already categorized, skipping');
+        return;
+      }
+
+      // 1. Generate description
+      const descResponse = await fetch('/api/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversation.messages }),
+      });
+
+      if (!descResponse.ok) {
+        throw new Error(`Description API failed: ${descResponse.status}`);
+      }
+
+      const { description } = await descResponse.json();
+      conversation.description = description || "Untitled conversation";
+
+      // 2. Match project
+      const projects = storage.getProjects();
+      if (projects.length === 0) {
+        // No projects exist → skip matching, stay in Miscellaneous
+        conversation.projectId = null;
+        storage.saveConversation(conversation);
+        setConversations(storage.getConversations());
+        return;
+      }
+
+      const matchResponse = await fetch('/api/match-project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationDescription: description,
+          projects: projects.map(p => ({ id: p.id, name: p.name, description: p.description })),
+        }),
+      });
+
+      if (!matchResponse.ok) {
+        throw new Error(`Match API failed: ${matchResponse.status}`);
+      }
+
+      const result = await matchResponse.json();
+
+      // Validate confidence
+      const confidence = typeof result.confidence === 'number'
+        ? Math.max(0, Math.min(1, result.confidence))
+        : 0.0;
+
+      // Re-check if conversation is still uncategorized (user might have moved it manually)
+      const currentConversation = storage.getConversation(conversationId);
+      if (!currentConversation || currentConversation.projectId !== null) {
+        console.log('Conversation was manually categorized, skipping auto-assignment');
+        return;
+      }
+
+      // Only assign if confidence meets threshold
+      if (confidence >= 0.7 && result.matchedProjectId) {
+        conversation.projectId = result.matchedProjectId;
+        console.log(`Auto-categorized to project ${result.matchedProjectId} with confidence ${confidence}`);
+      } else {
+        conversation.projectId = null; // Stay in Miscellaneous
+        console.log(`Low confidence (${confidence}), staying in Miscellaneous`);
+      }
+
+    } catch (error) {
+      console.error('Auto-categorization failed:', error);
+      // Fallback: assign to Miscellaneous
+      const conversation = storage.getConversation(conversationId);
+      if (conversation) {
+        conversation.description = conversation.description || "Untitled conversation";
+        conversation.projectId = null;
+      }
+    } finally {
+      // Always save conversation
+      const conversation = storage.getConversation(conversationId);
+      if (conversation) {
+        storage.saveConversation(conversation);
+        setConversations(storage.getConversations());
+      }
     }
   };
 
