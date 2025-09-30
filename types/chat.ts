@@ -45,8 +45,19 @@ export interface ChatRequest {
 export interface Conversation {
   id: string;
   title: string;
+  description?: string; // AI-generated one-liner describing the conversation
   messages: Message[];
   model?: ModelId;
+  projectId: string | null; // null = "Miscellaneous" bucket
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  description: string; // one-liner for matching algorithm
+  color: string; // hex color for visual distinction
   createdAt: number;
   updatedAt: number;
 }

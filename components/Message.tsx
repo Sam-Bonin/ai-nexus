@@ -43,8 +43,8 @@ export default function Message({ message }: MessageProps) {
       } mb-6 animate-fade-in`}
     >
       <div
-        className={`max-w-[85%] ${
-          isUser ? '' : 'w-full'
+        className={`${
+          isUser ? 'max-w-[85%]' : 'w-full'
         }`}
       >
         {/* Metadata for assistant messages */}

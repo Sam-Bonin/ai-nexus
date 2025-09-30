@@ -1,0 +1,821 @@
+# Project-Based Conversation Organization System
+## Revised Plan - Focus on Business Logic & Flow
+
+---
+
+## 🎯 **Core Business Logic**
+
+### The Flow
+```
+1. User starts new chat → First exchange happens
+   ↓
+2. TWO parallel API calls (both Sonnet 3.5):
+   a) Generate conversation title (existing)
+   b) Generate conversation description (NEW)
+   ↓
+3. Match conversation description against existing project descriptions
+   → API call with conversation description + all project descriptions
+   ↓
+4. Decision:
+   - MATCH FOUND → Auto-assign to that project
+   - NO MATCH → Assign to "Miscellaneous" bucket
+   ↓
+5. User can manually reorganize later
+```
+
+---
+
+## 📊 **Data Model**
+
+### Conversation
+```typescript
+interface Conversation {
+  id: string;
+  title: string;                    // existing
+  description: string;              // NEW - one-liner from AI
+  messages: Message[];
+  projectId: string | null;         // NEW - null means "Miscellaneous"
+  model?: ModelId;
+  createdAt: number;
+  updatedAt: number;
+}
+```
+
+### Project
+```typescript
+interface Project {
+  id: string;
+  name: string;
+  description: string;              // one-liner for matching
+  color: string;                    // visual distinction
+  createdAt: number;
+  updatedAt: number;
+}
+```
+
+### Special Case: "Miscellaneous"
+- Not a real project in storage
+- Just conversations with `projectId: null`
+- Always visible in sidebar
+- Acts as catch-all/inbox
+
+---
+
+## 🔄 **API Contracts**
+
+### 1. Generate Description (NEW)
+**Endpoint:** `/api/generate-description`
+
+**Implementation Pattern:** Non-streaming JSON response (follows existing OpenRouter pattern from `generate-title`)
+
+**Input:**
+```json
+{
+  "messages": [...first exchange...]
+}
+```
+
+**Output:** (JSON, non-streaming)
+```json
+{
+  "description": "Building a task management app with React"
+}
+```
+
+**Why non-streaming?**
+- Short, single string output (8-12 words)
+- Simpler client parsing (no stream handling)
+- Consistent with other metadata endpoints
+- Reduces UI complexity and race conditions
+
+**Prompt:**
+```
+Analyze this conversation and generate a single, concise sentence (8-12 words)
+describing what the user is trying to accomplish or discuss.
+Be specific and actionable.
+
+Return ONLY a JSON object in this exact format:
+{
+  "description": "your description here"
+}
+
+Conversation: [messages]
+```
+
+### 2. Match Project (NEW)
+**Endpoint:** `/api/match-project`
+
+**Implementation Pattern:** Non-streaming JSON response with structured scoring
+
+**Input:**
+```json
+{
+  "conversationDescription": "Building a task management app with React",
+  "projects": [
+    { "id": "1", "name": "Frontend Dev", "description": "Building React applications and components" },
+    { "id": "2", "name": "API Work", "description": "Integrating REST and GraphQL APIs" }
+  ]
+}
+```
+
+**Output:**
+```json
+{
+  "matchedProjectId": "1",  // or null if no match
+  "confidence": 0.8         // 0.0-1.0 in 0.1 increments
+}
+```
+
+**Error Handling:**
+- Validate `confidence` is number between 0.0 and 1.0, clamp if out of range
+- Tolerate missing/invalid JSON: default to `{ "matchedProjectId": null, "confidence": 0.0 }`
+- On API failure (401/429/500): return null match, log error
+
+**Prompt with Confidence Rubric:**
+```
+You are matching a conversation to projects based on semantic similarity.
+
+Conversation description: "{conversationDescription}"
+
+Available projects:
+{projects.map(p => `- ID: ${p.id}, Name: ${p.name}, Description: ${p.description}`).join('\n')}
+
+Task: Determine if this conversation belongs to any existing project.
+
+Scoring Rubric (0.0-1.0 in 0.1 increments):
+- 0.9-1.0: Direct topic match, same tools/technologies, same problem domain
+- 0.7-0.8: Related topic, overlapping domain, similar context
+- 0.5-0.6: Tangentially related, some keyword overlap
+- 0.3-0.4: Weak connection, different domain but related field
+- 0.0-0.2: No meaningful connection, different topics
+
+Rules:
+- Return matchedProjectId ONLY if confidence >= 0.7
+- Return null if no project scores >= 0.7
+- Be conservative - only match if truly relevant
+- Consider: topic overlap, technical stack similarity, problem domain alignment
+- If multiple projects score >= 0.7, choose the highest scoring one
+
+Return ONLY valid JSON in this exact format:
+{
+  "matchedProjectId": "project-id-here-or-null",
+  "confidence": 0.8
+}
+
+No additional text or explanation.
+```
+
+---
+
+## 🏗️ **Business Rules**
+
+### Matching Threshold
+- **Confidence ≥ 0.7**: Auto-assign to matched project
+- **Confidence < 0.7**: Send to Miscellaneous
+
+### Miscellaneous Behavior
+- Always appears at bottom of sidebar
+- Badge shows count: "Miscellaneous (12)"
+- User expectation: "Inbox to sort later"
+- Can be empty (hidden if no conversations)
+
+### Project Creation
+- **Only manual creation by user** (not auto-generated by AI)
+- User provides: name + description
+- Description is critical - guides future matches
+- Example good descriptions:
+  - ✅ "Building e-commerce features with Next.js and Stripe"
+  - ✅ "Debugging production API performance issues"
+  - ❌ "Miscellaneous work" (too vague)
+  - ❌ "Project 1" (no context)
+
+### Manual Reorganization
+- User can drag-drop OR context menu "Move to..."
+- Moving conversation updates `projectId`
+- No re-matching happens (user decision is final)
+- Can move TO Miscellaneous (sets projectId to null)
+
+---
+
+## ⚙️ **Critical Implementation Rules**
+
+### 1. Race Condition Prevention
+**Problem:** User manually moves conversation while auto-match API is in-flight.
+
+**Solution:**
+```typescript
+// In match completion handler
+function handleMatchComplete(conversationId: string, matchedProjectId: string) {
+  const conversation = storage.getConversation(conversationId);
+
+  // ONLY auto-assign if still uncategorized
+  if (conversation && conversation.projectId === null) {
+    conversation.projectId = matchedProjectId;
+    storage.saveConversation(conversation);
+  }
+  // If projectId !== null, user already moved it → DO NOT OVERRIDE
+}
+```
+
+**Rule:** Check `projectId === null` immediately before assignment. User decisions always win over AI suggestions.
+
+### 2. Project Deletion Handling
+**Problem:** What happens to conversations when their project is deleted?
+
+**Solution:**
+```typescript
+function deleteProject(projectId: string) {
+  // 1. Move all conversations to Miscellaneous
+  const conversations = storage.getConversations();
+  conversations
+    .filter(c => c.projectId === projectId)
+    .forEach(c => {
+      c.projectId = null;  // Back to Miscellaneous
+      storage.saveConversation(c);
+    });
+
+  // 2. Delete the project
+  storage.deleteProject(projectId);
+
+  // 3. Update UI
+  setConversations(storage.getConversations());
+  setProjects(storage.getProjects());
+}
+```
+
+**Rule:** Orphaned conversations go to Miscellaneous (never deleted automatically).
+
+### 3. Deterministic Color Assignment
+**Problem:** Project colors must be stable across sessions and not depend on order.
+
+**Solution:**
+```typescript
+// Color palette (from style guide)
+const PROJECT_COLORS = [
+  '#FFD50F', // Electric Yellow
+  '#FD765B', // Vibrant Coral
+  '#999999', // Neutral Gray
+  '#FFC107', // Amber (harmony)
+  '#FF6F91', // Pink (harmony)
+  '#4ECDC4', // Teal (harmony)
+  '#95E1D3', // Mint (harmony)
+  '#F38181', // Light Coral (harmony)
+];
+
+function assignProjectColor(projectId: string): string {
+  // Hash project ID to palette index
+  const hash = projectId.split('').reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc);
+  }, 0);
+
+  const index = Math.abs(hash) % PROJECT_COLORS.length;
+  return PROJECT_COLORS[index];
+}
+
+// When creating project
+const newProject: Project = {
+  id: generateId(),
+  name: userInput.name,
+  description: userInput.description,
+  color: assignProjectColor(newProjectId), // Deterministic
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+};
+```
+
+**Rule:** Color assigned once at creation, hashed from ID, stored in Project object. Never changes.
+
+### 4. Error Handling & Fallbacks
+**Problem:** API failures shouldn't break the user experience.
+
+**Solution:**
+```typescript
+// In Chat.tsx after title generation
+async function categorizeConversation(conversation: Conversation) {
+  try {
+    // 1. Generate description
+    const descResponse = await fetch('/api/generate-description', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: conversation.messages }),
+    });
+
+    if (!descResponse.ok) {
+      throw new Error(`Description API failed: ${descResponse.status}`);
+    }
+
+    const { description } = await descResponse.json();
+    conversation.description = description || "Untitled conversation"; // Fallback
+
+    // 2. Match project
+    const projects = storage.getProjects();
+    if (projects.length === 0) {
+      // No projects exist → skip matching
+      conversation.projectId = null;
+      storage.saveConversation(conversation);
+      return;
+    }
+
+    const matchResponse = await fetch('/api/match-project', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationDescription: description,
+        projects: projects.map(p => ({ id: p.id, name: p.name, description: p.description })),
+      }),
+    });
+
+    if (!matchResponse.ok) {
+      throw new Error(`Match API failed: ${matchResponse.status}`);
+    }
+
+    const result = await matchResponse.json();
+
+    // Validate confidence
+    const confidence = typeof result.confidence === 'number'
+      ? Math.max(0, Math.min(1, result.confidence))  // Clamp 0-1
+      : 0.0;
+
+    // Only assign if confidence meets threshold AND projectId still null
+    if (confidence >= 0.7 && result.matchedProjectId && conversation.projectId === null) {
+      conversation.projectId = result.matchedProjectId;
+    } else {
+      conversation.projectId = null; // Miscellaneous
+    }
+
+  } catch (error) {
+    console.error('Auto-categorization failed:', error);
+    // Fallback: assign to Miscellaneous
+    conversation.description = conversation.description || "Untitled conversation";
+    conversation.projectId = null;
+  } finally {
+    // Always save conversation
+    storage.saveConversation(conversation);
+    setConversations(storage.getConversations());
+  }
+}
+```
+
+**Rules:**
+- Any API failure → default to Miscellaneous
+- Missing description → use fallback text
+- Invalid confidence → clamp to 0.0-1.0 range
+- Always save conversation, even if categorization fails
+
+### 5. Search Interaction with Groups
+**Problem:** How does search work when conversations are grouped?
+
+**Solution:**
+```typescript
+// In Sidebar.tsx
+const [searchQuery, setSearchQuery] = useState('');
+
+// Filter conversations across ALL groups
+const filteredConversations = conversations.filter(c =>
+  c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  c.description?.toLowerCase().includes(searchQuery.toLowerCase())
+);
+
+// Group filtered conversations by project
+const groupedConversations = projects.map(project => ({
+  project,
+  conversations: filteredConversations.filter(c => c.projectId === project.id),
+}));
+
+// Add Miscellaneous group
+const miscConversations = filteredConversations.filter(c => c.projectId === null);
+
+// When searching, auto-expand groups with matches
+```
+
+**Rules:**
+- Search across all conversations (title + description)
+- Show matched conversations within their project groups
+- Auto-expand groups that contain matches
+- Empty groups (no matches) can be hidden during search
+
+### 6. Sidebar Refactor Complexity
+**Major Changes to `components/Sidebar.tsx`:**
+- Change from flat list to grouped/nested structure
+- Add expand/collapse state per project (store in localStorage: `claude-project-expanded-{projectId}`)
+- Add project header components with badges
+- Add "Miscellaneous" section rendering
+- Integrate search filtering with groups
+- Handle conversation counts per project
+- Context menu now includes "Move to project..." option
+
+**Estimated Complexity:** High
+- Current: ~230 lines, flat conversation list
+- After: ~400-500 lines, nested groups, state management, animations
+
+**Recommendation:** Create separate `ProjectSection.tsx` component to keep Sidebar manageable.
+
+---
+
+## 🎨 **User Experience Flow**
+
+### Scenario 1: New Chat, Good Match
+```
+1. User: "How do I implement authentication in Next.js?"
+2. AI responds
+3. Behind the scenes:
+   - Title generated: "Next.js Authentication Implementation"
+   - Description generated: "Implementing user authentication in Next.js application"
+   - Match API called with existing projects
+   - Match found: "Frontend Development" project (0.88 confidence)
+4. Conversation appears under "Frontend Development" project
+5. User sees no interruption, auto-organized
+```
+
+### Scenario 2: New Chat, No Match
+```
+1. User: "What are the health benefits of green tea?"
+2. AI responds
+3. Behind the scenes:
+   - Title: "Green Tea Health Benefits"
+   - Description: "Exploring nutritional and health benefits of green tea"
+   - Match API: no relevant projects (all are dev-related)
+   - Assigned to Miscellaneous
+4. Conversation appears in "Miscellaneous" bucket
+5. User can later create "Health & Nutrition" project and move it
+```
+
+### Scenario 3: User Manual Organization
+```
+1. User right-clicks conversation in Miscellaneous
+2. Selects "Move to project..."
+3. Modal shows:
+   - List of existing projects
+   - "Create new project" button
+4. User creates "Health & Nutrition" project:
+   - Name: "Health & Nutrition"
+   - Description: "Research on diet, nutrition, and wellness topics"
+5. Conversation moved to new project
+6. Future health-related chats auto-match to this project
+```
+
+---
+
+## 🎪 **Sidebar Organization**
+
+### Visual Structure
+```
+┌─ AI Nexus ─────────────────────┐
+│ [Search conversations...]       │
+│ [+ New Chat]                    │
+├─────────────────────────────────┤
+│ 🟡 Frontend Development    (8) ▼│  ← Expanded
+│   │ Next.js Authentication      │
+│   │ Tailwind CSS Layouts        │
+│   │ React State Management      │
+│   └ ...                         │
+│                                 │
+│ 🔵 API Integration         (5) ▶│  ← Collapsed
+│                                 │
+│ 🟢 Database Design         (3) ▶│
+│                                 │
+│ 📦 Miscellaneous          (12) ▼│
+│   │ Green Tea Benefits          │
+│   │ Random Python Question      │
+│   └ ...                         │
+└─────────────────────────────────┘
+```
+
+### Sorting Logic
+- Projects sorted alphabetically (OR by recency - your choice)
+- "Miscellaneous" always at bottom
+- Within project: conversations sorted by updatedAt (newest first)
+- Empty projects hidden OR shown with (0) - your choice
+
+---
+
+## 🎨 **Visual Design & Styling**
+
+### Design Principles
+- **Bold & Modern**: High contrast with vibrant accent colors
+- **Consistent Spacing**: 4px/8px grid system (Tailwind defaults)
+- **Smooth Transitions**: All interactions animate (250-300ms duration)
+- **Typography-First**: Clean, readable Inter font
+- **Subtle Depth**: Light shadows and borders, no heavy 3D effects
+
+### Color System
+
+#### Project Colors (Auto-assigned from brand palette)
+Use these colors for project visual distinction:
+- **Electric Yellow** `#FFD50F` - Primary accent
+- **Vibrant Coral** `#FD765B` - Secondary accent
+- **Neutral Gray** `#999999` - Tertiary option
+
+Generate additional harmonious colors by blending these or using variations in opacity.
+
+#### Component Colors
+```tsx
+// Project Section Header (Collapsed)
+className="px-3 py-2 rounded-claude-sm
+           hover:bg-pure-black/5 dark:hover:bg-pure-white/5
+           transition-colors cursor-pointer
+           border-l-4 border-[project.color]"
+
+// Project Section Header (Expanded/Active)
+className="px-3 py-2 rounded-claude-sm
+           bg-white dark:bg-pure-white/5
+           shadow-claude-sm
+           border-l-4 border-[project.color]"
+
+// Conversation Item (within project)
+className="px-3 py-2 rounded-claude-sm
+           hover:bg-white/50 dark:hover:bg-pure-white/5
+           transition-colors
+           text-sm text-gray-900 dark:text-gray-100"
+
+// Conversation Item (Active)
+className="px-3 py-2 rounded-claude-sm
+           bg-white dark:bg-pure-white/5
+           shadow-claude-sm
+           border border-electric-yellow/20"
+
+// Badge Count
+className="px-2 py-0.5 rounded-full
+           bg-electric-yellow/10 dark:bg-electric-yellow/20
+           text-xs font-medium text-pure-black dark:text-pure-white"
+```
+
+### Typography
+
+#### Project Headers
+```tsx
+className="text-sm font-semibold text-pure-black dark:text-pure-white
+           tracking-tight"
+```
+
+#### Conversation Titles
+```tsx
+className="text-sm font-medium text-gray-900 dark:text-gray-100
+           truncate"
+```
+
+#### Metadata (dates, counts)
+```tsx
+className="text-xs text-neutral-gray dark:text-neutral-gray
+           font-medium"
+```
+
+### Spacing & Layout
+
+#### Project Section
+```tsx
+// Section wrapper
+className="mb-1 space-y-1"
+
+// Header padding
+px-3 py-2
+
+// Nested conversation indent
+pl-6 (24px indent for visual hierarchy)
+```
+
+#### Animations
+
+##### Expand/Collapse
+```tsx
+// Container
+className="overflow-hidden transition-all duration-300 ease-in-out"
+style={{ maxHeight: isExpanded ? `${contentHeight}px` : '0' }}
+
+// Icon rotation
+className="transform transition-transform duration-200"
+style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+```
+
+##### Project Assignment (When conversation gets categorized)
+```tsx
+// Subtle fade + slide from Miscellaneous → Project
+className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+```
+
+### Interactive Elements
+
+#### Context Menu
+```tsx
+className="absolute right-0 mt-1 w-48
+           bg-pure-white dark:bg-dark-gray
+           rounded-claude-md shadow-claude-lg
+           border border-pure-black/10 dark:border-pure-white/10
+           py-1 z-20"
+
+// Menu items
+className="w-full text-left px-4 py-2 text-sm
+           text-gray-700 dark:text-gray-300
+           hover:bg-pure-black/5 dark:hover:bg-pure-white/5
+           transition-colors"
+```
+
+#### Modal (Create/Move Project)
+```tsx
+// Backdrop
+className="fixed inset-0 bg-pure-black/50 dark:bg-pure-black/70
+           backdrop-blur-sm z-40
+           animate-in fade-in duration-200"
+
+// Modal container
+className="fixed inset-0 flex items-center justify-center z-50
+           p-4"
+
+// Modal card
+className="bg-pure-white dark:bg-dark-gray
+           rounded-claude-lg shadow-claude-lg
+           border border-pure-black/10 dark:border-pure-white/10
+           max-w-md w-full p-6
+           animate-in zoom-in-95 duration-200"
+```
+
+#### Buttons
+
+##### Primary Action (Create Project)
+```tsx
+className="px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600
+           text-pure-black rounded-claude-sm font-medium
+           shadow-claude-sm transition-colors"
+```
+
+##### Secondary Action (Cancel)
+```tsx
+className="px-4 py-2 bg-transparent hover:bg-pure-black/5
+           dark:hover:bg-pure-white/5
+           text-gray-700 dark:text-gray-300
+           rounded-claude-sm font-medium
+           transition-colors"
+```
+
+### Accessibility
+
+#### Focus States
+```tsx
+// All interactive elements
+className="focus:outline-none focus:ring-2
+           focus:ring-electric-yellow/50 focus:ring-offset-2
+           focus:ring-offset-white dark:focus:ring-offset-dark-gray"
+```
+
+#### Keyboard Navigation
+- Tab through projects and conversations
+- Enter/Space to expand/collapse projects
+- Arrow keys to navigate within lists
+- Context menu key (or Shift+F10) to open actions
+
+### Empty States
+
+#### No Projects Yet
+```tsx
+<div className="px-4 py-8 text-center">
+  <div className="text-4xl mb-3">📁</div>
+  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+    No projects yet
+  </p>
+  <p className="text-xs text-neutral-gray dark:text-neutral-gray mb-4">
+    Create projects to auto-organize your conversations
+  </p>
+  <button className="text-xs text-electric-yellow hover:text-vibrant-coral
+                     font-medium transition-colors">
+    + Create your first project
+  </button>
+</div>
+```
+
+#### Empty Project (No conversations)
+```tsx
+<div className="pl-6 py-2 text-xs text-neutral-gray dark:text-neutral-gray italic">
+  No conversations yet
+</div>
+```
+
+### Responsive Considerations
+- Maintain existing sidebar collapse behavior (`w-72` → `w-0`)
+- On mobile, project sections default to collapsed to save space
+- Touch targets minimum 44px height for mobile
+- Swipe gestures for expand/collapse (optional enhancement)
+
+---
+
+## 🧩 **Edge Cases & Decisions**
+
+### What if matching is slow?
+- Show conversation in Miscellaneous immediately (optimistic UI)
+- Once match completes, move to project (with subtle animation)
+- User sees conversation right away, doesn't wait
+
+### What if user has no projects yet?
+- Everything goes to Miscellaneous initially
+- Show hint: "💡 Create projects to auto-organize your chats"
+- Once first project created, existing chats stay in Misc (no retroactive matching)
+
+### What if AI matches wrong?
+- User manually moves conversation
+- Optionally: "This doesn't belong here" feedback (future enhancement)
+- No automatic re-categorization (user has final say)
+
+### Can user delete Miscellaneous?
+- No, it's a built-in bucket
+- Can be empty (hidden) but not deleted
+
+### Can user rename/edit project descriptions?
+- Yes! Important for improving future matches
+- Editing description doesn't retroactively re-match existing conversations
+- Only affects future new conversations
+
+### What if conversation topic shifts?
+- Conversation stays in original project
+- Title/description reflects initial topic
+- User can manually move if it evolves into something else
+
+---
+
+## ✅ **Success Criteria (Business Outcomes)**
+
+1. **Auto-organization accuracy ≥80%**: Most conversations land in the right project without user intervention
+2. **Miscellaneous as inbox**: Users comfortable leaving conversations there temporarily
+3. **Low friction reorganization**: Moving conversations takes <5 seconds
+4. **Project descriptions drive quality**: Users understand good descriptions = better matching
+5. **No analysis paralysis**: System makes decision quickly, user can override easily
+
+---
+
+## 🚀 **Phased Rollout**
+
+### Phase 1: Foundation
+- Add description field to Conversation
+- Add Project CRUD in storage
+- Build basic grouped sidebar (no auto-matching yet)
+
+### Phase 2: AI Integration
+- Implement `/api/generate-description` endpoint
+- Implement `/api/match-project` endpoint
+- Integrate calls after title generation
+
+### Phase 3: User Controls
+- Manual project creation UI
+- Move conversation UI (context menu + modal)
+- Project edit/delete functionality
+
+### Phase 4: Polish
+- Expand/collapse animations
+- Drag-and-drop (optional enhancement)
+- Empty states and onboarding hints
+
+---
+
+## 🤔 **Open Questions for You**
+
+1. **Project colors**: Auto-assigned from palette (Electric Yellow, Vibrant Coral, Neutral Gray + generated harmonies), or user chooses?
+2. **Miscellaneous label**: "Miscellaneous", "Unsorted", "Inbox", or something else?
+3. **Empty projects**: Hide them or show with (0)?
+4. **Default expand state**: All projects collapsed, all expanded, or remember per-project (localStorage)?
+5. **Project limit**: Any max number of projects? (UX consideration - suggest 20 max)
+
+---
+
+## 📝 **Design Decisions Summary**
+
+### Style Guide Adherence
+- ✅ **Colors**: Electric Yellow (#FFD50F), Vibrant Coral (#FD765B), Neutral Gray (#999999) + harmonies
+- ✅ **Typography**: Inter font, with font sizes from 10px (tiny) to 18px (body)
+- ✅ **Spacing**: 4px/8px grid, consistent padding (px-3 py-2 for most items)
+- ✅ **Border Radius**: `rounded-claude-sm` (8px) for most items, `rounded-claude-md` (12px) for modals
+- ✅ **Shadows**: `shadow-claude-sm` (subtle elevation) for active items, `shadow-claude-lg` for modals
+- ✅ **Animations**: 250-300ms transitions, smooth ease-in-out
+- ✅ **Dark Mode**: Consistent use of `dark:` variants with proper opacity layers
+- ✅ **Focus States**: Electric Yellow ring with 2px width and offset
+- ✅ **Accessibility**: Keyboard navigation, proper ARIA labels, 44px touch targets on mobile
+
+### Implementation Decisions
+- ✅ **API Pattern**: Non-streaming JSON responses (consistent with existing `generate-title` pattern)
+- ✅ **Confidence Scoring**: Explicit rubric (0.0-1.0 in 0.1 increments) with validation/clamping
+- ✅ **Race Conditions**: Only auto-assign if `projectId === null` at time of match completion
+- ✅ **Project Deletion**: Orphaned conversations move to Miscellaneous (never auto-deleted)
+- ✅ **Color Assignment**: Deterministic hash-based algorithm, stored in Project object
+- ✅ **Error Handling**: Fallback to Miscellaneous on any API failure, with proper logging
+- ✅ **Search Behavior**: Cross-group search with auto-expand of matching groups
+- ✅ **Component Strategy**: Extract `ProjectSection.tsx` to manage complexity
+
+---
+
+## 🎯 **Key Takeaways**
+
+### Business Logic
+1. **Automatic + Manual**: AI suggests, user overrides. User decisions always win.
+2. **Miscellaneous as inbox**: Safe default for all edge cases and failures.
+3. **No retroactive matching**: Only new conversations get auto-categorized.
+
+### Technical Quality
+1. **Deterministic behavior**: Color assignment, matching logic all reproducible.
+2. **Graceful degradation**: System works even when APIs fail.
+3. **User trust**: Race condition handling ensures no surprising auto-moves.
+
+### Architecture
+1. **Pattern consistency**: Follow existing OpenRouter/storage patterns.
+2. **Component isolation**: Break Sidebar refactor into manageable pieces.
+3. **State management**: Use localStorage for persistence, React state for UI.
+
+---
+
+**Status:** Ready for implementation once open questions answered.

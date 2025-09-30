@@ -1,8 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { Conversation } from '@/types/chat';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
+import { Conversation, Project } from '@/types/chat';
+import { storage } from '@/lib/storage';
 import { exportConversationAsMarkdown, exportConversationAsJSON, downloadFile } from '@/lib/utils';
+import ProjectSection from './ProjectSection';
+import ProjectModal from './ProjectModal';
+import MoveConversationModal from './MoveConversationModal';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
+import ConversationDropdown from './ConversationDropdown';
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -11,6 +18,7 @@ interface SidebarProps {
   onNewChat: () => void;
   onDeleteConversation: (id: string) => void;
   onRenameConversation: (id: string, newTitle: string) => void;
+  onConversationsUpdate?: () => void;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -22,13 +30,87 @@ export default function Sidebar({
   onNewChat,
   onDeleteConversation,
   onRenameConversation,
+  onConversationsUpdate,
   isOpen,
   onToggle,
 }: SidebarProps) {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+
+  // Project management modals
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const [movingConversation, setMovingConversation] = useState<Conversation | null>(null);
+  const [deleteProjectModalOpen, setDeleteProjectModalOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+
+  // Dropdown state
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+  const [dropdownConversation, setDropdownConversation] = useState<Conversation | null>(null);
+
+  // Load projects and expand state from localStorage
+  useEffect(() => {
+    setProjects(storage.getProjects());
+
+    // Load expanded state from localStorage
+    const savedExpandedState = new Set<string>();
+    storage.getProjects().forEach(project => {
+      const isExpanded = localStorage.getItem(`claude-project-expanded-${project.id}`);
+      if (isExpanded === 'true') {
+        savedExpandedState.add(project.id);
+      }
+    });
+    setExpandedProjects(savedExpandedState);
+  }, [conversations]); // Reload when conversations change
+
+  const toggleProjectExpand = (projectId: string) => {
+    setExpandedProjects(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId);
+        localStorage.setItem(`claude-project-expanded-${projectId}`, 'false');
+      } else {
+        newSet.add(projectId);
+        localStorage.setItem(`claude-project-expanded-${projectId}`, 'true');
+      }
+      return newSet;
+    });
+  };
+
+  // Filter conversations based on search query
+  const filteredConversations = searchQuery
+    ? conversations.filter(c =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : conversations;
+
+  // Group conversations by project
+  const conversationsByProject = projects.map(project => ({
+    project,
+    conversations: filteredConversations.filter(c => c.projectId === project.id),
+  }));
+
+  // Miscellaneous conversations (projectId === null)
+  const miscellaneousConversations = filteredConversations.filter(c => c.projectId === null);
+
+  // Handle export
+  const handleExport = (conversation: Conversation, format: 'markdown' | 'json') => {
+    const content = format === 'markdown'
+      ? exportConversationAsMarkdown(conversation)
+      : exportConversationAsJSON(conversation);
+
+    const extension = format === 'markdown' ? 'md' : 'json';
+    const filename = `${conversation.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${extension}`;
+
+    downloadFile(content, filename, format === 'markdown' ? 'text/markdown' : 'application/json');
+    setMenuOpenId(null);
+  };
 
   const handleRenameStart = (conversation: Conversation) => {
     setEditingId(conversation.id);
@@ -43,22 +125,67 @@ export default function Sidebar({
     setEditingId(null);
   };
 
-  const handleExport = (conversation: Conversation, format: 'markdown' | 'json') => {
-    const content = format === 'markdown'
-      ? exportConversationAsMarkdown(conversation)
-      : exportConversationAsJSON(conversation);
-
-    const extension = format === 'markdown' ? 'md' : 'json';
-    const filename = `${conversation.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${extension}`;
-
-    downloadFile(content, filename, format === 'markdown' ? 'text/markdown' : 'application/json');
-    setMenuOpenId(null);
+  // Project management handlers
+  const handleCreateProject = () => {
+    setEditingProject(null);
+    setProjectModalOpen(true);
   };
 
-  // Filter conversations based on search query
-  const filteredConversations = conversations.filter(conversation =>
-    conversation.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setProjectModalOpen(true);
+  };
+
+  const handleSaveProject = (project: Project) => {
+    storage.saveProject(project);
+    setProjects(storage.getProjects());
+  };
+
+  const handleDeleteProjectClick = (project: Project) => {
+    setDeletingProject(project);
+    setDeleteProjectModalOpen(true);
+  };
+
+  const handleDeleteProjectConfirm = () => {
+    if (deletingProject) {
+      storage.deleteProject(deletingProject.id);
+      setProjects(storage.getProjects());
+      // Notify parent that conversations have been updated (moved to Miscellaneous)
+      onConversationsUpdate?.();
+    }
+  };
+
+  const handleMoveConversationClick = (conversation: Conversation) => {
+    setMovingConversation(conversation);
+    setMoveModalOpen(true);
+  };
+
+  const handleMoveConversation = (projectId: string | null) => {
+    if (movingConversation) {
+      storage.updateConversationProject(movingConversation.id, projectId);
+      // Notify parent that conversations have been updated
+      onConversationsUpdate?.();
+    }
+  };
+
+  const handleDropdownClick = (conversation: Conversation, buttonElement: HTMLButtonElement) => {
+    if (menuOpenId === conversation.id) {
+      setMenuOpenId(null);
+      setDropdownPosition(null);
+      setDropdownConversation(null);
+    } else {
+      const rect = buttonElement.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+      setMenuOpenId(conversation.id);
+      setDropdownConversation(conversation);
+    }
+  };
+
+  const hasConversations = conversations.length > 0;
+  const hasProjects = projects.length > 0;
 
   return (
     <>
@@ -71,23 +198,45 @@ export default function Sidebar({
         {/* Header */}
         <div className="p-4 border-b border-pure-black/10 dark:border-pure-white/10">
           <div className="mb-4">
-            <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-electric-yellow via-vibrant-coral to-crail">
-              AI Nexus
-            </h1>
-            <p className="text-xs text-neutral-gray dark:text-cloudy-400 mt-1 font-medium">Universal AI Interface</p>
+            <Image
+              src="/logo-light.png"
+              alt="AI Nexus"
+              width={208}
+              height={50}
+              className="w-52 h-auto block dark:hidden"
+            />
+            <Image
+              src="/logo-dark.png"
+              alt="AI Nexus"
+              width={208}
+              height={50}
+              className="w-52 h-auto hidden dark:block"
+            />
+            <p className="text-xs text-neutral-gray dark:text-cloudy-400 mt-2 font-medium">Universal AI Interface</p>
           </div>
-          <button
-            onClick={onNewChat}
-            className="w-full px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600 text-pure-black rounded-claude-sm transition-colors font-medium flex items-center justify-center gap-2 shadow-claude-sm"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Chat
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={onNewChat}
+              className="w-full px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600 text-pure-black rounded-claude-sm transition-colors font-medium flex items-center justify-center gap-2 shadow-claude-sm"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              New Chat
+            </button>
+            <button
+              onClick={handleCreateProject}
+              className="w-full px-4 py-2 bg-pure-black/5 dark:bg-pure-white/5 hover:bg-pure-black/10 dark:hover:bg-pure-white/10 text-pure-black dark:text-pure-white rounded-claude-sm transition-colors font-medium shadow-claude-sm flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+              New Project
+            </button>
+          </div>
 
           {/* Search input */}
-          {conversations.length > 0 && (
+          {hasConversations && (
             <div className="mt-3">
               <div className="relative">
                 <input
@@ -95,7 +244,7 @@ export default function Sidebar({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search conversations..."
-                  className="w-full px-3 py-2 pl-9 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-crail/50 focus:border-crail dark:focus:ring-electric-yellow/50 dark:focus:border-electric-yellow"
+                  className="w-full px-3 py-2 pl-9 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-electric-yellow/50 focus:border-electric-yellow"
                 />
                 <svg
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cloudy-500 dark:text-cloudy-400"
@@ -110,119 +259,230 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Conversation list */}
+        {/* Projects and conversations list */}
         <div className="flex-1 overflow-y-auto p-2">
-          {filteredConversations.length === 0 && searchQuery ? (
+          {!hasConversations && !hasProjects ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                No conversations yet
+              </p>
+              <p className="text-xs text-neutral-gray dark:text-neutral-gray">
+                Start a new chat to get started
+              </p>
+            </div>
+          ) : !hasProjects && hasConversations ? (
+            <div className="px-4 py-6 text-center mb-4 bg-electric-yellow/5 dark:bg-electric-yellow/10 rounded-claude-md border border-electric-yellow/20">
+              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">
+                Create projects to auto-organize
+              </p>
+              <p className="text-xs text-neutral-gray dark:text-neutral-gray mb-3">
+                Group conversations by topic for easy access
+              </p>
+              <button
+                onClick={handleCreateProject}
+                className="text-xs text-electric-yellow hover:text-vibrant-coral font-medium transition-colors"
+              >
+                + Create your first project
+              </button>
+            </div>
+          ) : null}
+
+          {/* Project sections */}
+          {conversationsByProject.map(({ project, conversations: projectConvs }) => {
+            // Hide empty projects during search
+            if (searchQuery && projectConvs.length === 0) return null;
+
+            return (
+              <ProjectSection
+                key={project.id}
+                project={project}
+                conversations={projectConvs}
+                activeConversationId={activeConversationId}
+                isExpanded={expandedProjects.has(project.id)}
+                onToggle={() => toggleProjectExpand(project.id)}
+                onSelectConversation={onSelectConversation}
+                onRenameConversation={onRenameConversation}
+                onDeleteConversation={onDeleteConversation}
+                onMoveConversation={handleMoveConversationClick}
+                onEditProject={handleEditProject}
+                onDeleteProject={handleDeleteProjectClick}
+              />
+            );
+          })}
+
+          {/* Miscellaneous section */}
+          {miscellaneousConversations.length > 0 && (
+            <div className="mb-1 mt-4">
+              {/* Separator line */}
+              <div className="flex items-center gap-2 px-3 mb-2">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-pure-black/10 dark:via-pure-white/10 to-transparent"></div>
+                <span className="text-xs font-normal text-neutral-gray/70 dark:text-cloudy-400">
+                  Uncategorized
+                </span>
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-pure-black/10 dark:via-pure-white/10 to-transparent"></div>
+              </div>
+
+              {/* Miscellaneous Header */}
+              <button
+                onClick={() => toggleProjectExpand('miscellaneous')}
+                className={`w-full text-left px-3 py-2 rounded-claude-sm transition-colors cursor-pointer border-l-4 border-dashed border-cloudy-400 dark:border-cloudy-500 flex items-center justify-between group ${
+                  expandedProjects.has('miscellaneous')
+                    ? 'bg-cloudy-100/30 dark:bg-cloudy-900/10'
+                    : 'hover:bg-cloudy-100/20 dark:hover:bg-cloudy-900/10'
+                }`}
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <svg
+                    className="w-4 h-4 text-cloudy-500 dark:text-cloudy-400 transition-transform duration-200 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    style={{ transform: expandedProjects.has('miscellaneous') ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+
+                  {/* Inbox/Collection icon */}
+                  <svg
+                    className="w-4 h-4 text-cloudy-500 dark:text-cloudy-400 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+
+                  <span className="text-sm font-medium text-cloudy-600 dark:text-cloudy-300 tracking-tight truncate">
+                    Miscellaneous
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full bg-cloudy-200/40 dark:bg-cloudy-700/30 text-xs font-medium text-cloudy-700 dark:text-cloudy-300 flex-shrink-0 border border-cloudy-300/30 dark:border-cloudy-600/30">
+                  {miscellaneousConversations.length}
+                </span>
+              </button>
+
+              {/* Miscellaneous conversations */}
+              <div
+                className="overflow-hidden transition-all duration-300 ease-in-out"
+                style={{
+                  maxHeight: expandedProjects.has('miscellaneous') ? '1000px' : '0',
+                }}
+              >
+                <div className="space-y-1 pt-1">
+                  {miscellaneousConversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      className={`group relative rounded-claude-sm transition-colors ml-6 border-l-2 border-dashed ${
+                        conversation.id === activeConversationId
+                          ? 'bg-cloudy-100/40 dark:bg-cloudy-900/20 border-electric-yellow/40'
+                          : 'border-transparent hover:bg-cloudy-100/20 dark:hover:bg-cloudy-900/10 hover:border-cloudy-300/40 dark:hover:border-cloudy-600/40'
+                      }`}
+                    >
+                      {editingId === conversation.id ? (
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleRenameSubmit(conversation.id);
+                          }}
+                          className="p-2"
+                        >
+                          <input
+                            type="text"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onBlur={() => handleRenameSubmit(conversation.id)}
+                            autoFocus
+                            className="w-full px-2 py-1 text-sm bg-white dark:bg-dark-bg border border-electric-yellow rounded-claude-sm focus:outline-none focus:ring-2 focus:ring-electric-yellow/50"
+                          />
+                        </form>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => onSelectConversation(conversation.id)}
+                            className="w-full text-left p-3 pr-10 block"
+                          >
+                            <div className="text-sm font-medium text-cloudy-700 dark:text-cloudy-200 truncate">
+                              {conversation.title}
+                            </div>
+                            <div className="text-xs text-cloudy-500 dark:text-cloudy-400 mt-1">
+                              {new Date(conversation.updatedAt).toLocaleDateString()}
+                            </div>
+                          </button>
+
+                          {/* Menu button */}
+                          <div className="absolute top-2 right-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDropdownClick(conversation, e.currentTarget);
+                              }}
+                              className="p-1 rounded-claude-sm hover:bg-cloudy-200/40 dark:hover:bg-cloudy-800/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <svg className="w-5 h-5 text-cloudy-500 dark:text-cloudy-400" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                              </svg>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* No results */}
+          {searchQuery && filteredConversations.length === 0 && (
             <p className="text-center text-cloudy-600 dark:text-cloudy-200 text-sm mt-8">
               No conversations found
             </p>
-          ) : filteredConversations.length === 0 ? (
-            <p className="text-center text-cloudy-600 dark:text-cloudy-200 text-sm mt-8">
-              No conversations yet
-            </p>
-          ) : (
-            <div className="space-y-1">
-              {filteredConversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`group relative rounded-claude-sm transition-colors ${
-                    conversation.id === activeConversationId
-                      ? 'bg-white dark:bg-pure-white/5 shadow-claude-sm border border-crail/20 dark:border-pure-white/20'
-                      : 'hover:bg-white/50 dark:hover:bg-pure-white/5'
-                  }`}
-                >
-                  {editingId === conversation.id ? (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleRenameSubmit(conversation.id);
-                      }}
-                      className="p-2"
-                    >
-                      <input
-                        type="text"
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onBlur={() => handleRenameSubmit(conversation.id)}
-                        autoFocus
-                        className="w-full px-2 py-1 text-sm bg-white dark:bg-dark-bg border border-crail rounded-claude-sm focus:outline-none focus:ring-2 focus:ring-crail/50 font-sans"
-                      />
-                    </form>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => onSelectConversation(conversation.id)}
-                        className="w-full text-left p-3 pr-10 block"
-                      >
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                          {conversation.title}
-                        </div>
-                        <div className="text-xs text-neutral-gray dark:text-neutral-gray mt-1">
-                          {new Date(conversation.updatedAt).toLocaleDateString()}
-                        </div>
-                      </button>
-
-                      {/* Menu button */}
-                      <div className="absolute top-2 right-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMenuOpenId(menuOpenId === conversation.id ? null : conversation.id);
-                          }}
-                          className="p-1 rounded-claude-sm hover:bg-pure-black/5 dark:hover:bg-pure-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                          </svg>
-                        </button>
-
-                        {/* Dropdown menu */}
-                        {menuOpenId === conversation.id && (
-                          <>
-                            <div
-                              className="fixed inset-0 z-10"
-                              onClick={() => setMenuOpenId(null)}
-                            />
-                            <div className="absolute right-0 mt-1 w-48 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 py-1 z-20">
-                              <button
-                                onClick={() => handleRenameStart(conversation)}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                              >
-                                Rename
-                              </button>
-                              <button
-                                onClick={() => handleExport(conversation, 'markdown')}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                              >
-                                Export as Markdown
-                              </button>
-                              <button
-                                onClick={() => handleExport(conversation, 'json')}
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                              >
-                                Export as JSON
-                              </button>
-                              <button
-                                onClick={() => {
-                                  onDeleteConversation(conversation.id);
-                                  setMenuOpenId(null);
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-electric-yellow dark:text-electric-yellow hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
           )}
         </div>
       </aside>
+
+      {/* Modals */}
+      <ProjectModal
+        isOpen={projectModalOpen}
+        onClose={() => setProjectModalOpen(false)}
+        onSave={handleSaveProject}
+        project={editingProject}
+      />
+
+      <MoveConversationModal
+        isOpen={moveModalOpen}
+        onClose={() => setMoveModalOpen(false)}
+        onMove={handleMoveConversation}
+        projects={projects}
+        currentProjectId={movingConversation?.projectId || null}
+        conversationTitle={movingConversation?.title || ''}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={deleteProjectModalOpen}
+        onClose={() => setDeleteProjectModalOpen(false)}
+        onConfirm={handleDeleteProjectConfirm}
+        title="Delete Project"
+        message={`Are you sure you want to delete "${deletingProject?.name}"? All conversations in this project will be moved to Miscellaneous.`}
+        confirmText="Delete Project"
+      />
+
+      {/* Fixed positioned dropdown for miscellaneous conversations */}
+      {dropdownConversation && (
+        <ConversationDropdown
+          conversation={dropdownConversation}
+          isOpen={!!menuOpenId}
+          position={dropdownPosition}
+          onClose={() => {
+            setMenuOpenId(null);
+            setDropdownPosition(null);
+            setDropdownConversation(null);
+          }}
+          onRename={handleRenameStart}
+          onMove={handleMoveConversationClick}
+          onDelete={onDeleteConversation}
+        />
+      )}
     </>
   );
 }

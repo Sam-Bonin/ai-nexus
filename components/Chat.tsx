@@ -89,13 +89,13 @@ export default function Chat() {
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = '72px';
+      textareaRef.current.style.height = '56px';
       const newHeight = Math.min(textareaRef.current.scrollHeight, 300);
       textareaRef.current.style.height = newHeight + 'px';
       textareaRef.current.style.overflowY = newHeight >= 300 ? 'auto' : 'hidden';
 
       // Track if textarea has grown beyond single line
-      setIsMultiline(newHeight > 72);
+      setIsMultiline(newHeight > 64);
     }
   }, [input]);
 
@@ -171,6 +171,7 @@ export default function Chat() {
         title: generateConversationTitle(updatedMessages),
         messages: updatedMessages,
         model: selectedModel,
+        projectId: null, // Start in Miscellaneous, will be categorized after title generation
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -216,6 +217,10 @@ export default function Chat() {
       storage.saveConversation(updated);
       setConversations(storage.getConversations());
     }
+  };
+
+  const handleConversationsUpdate = () => {
+    setConversations(storage.getConversations());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -445,9 +450,101 @@ export default function Chat() {
             ? { ...conversation, title: fullTitle, updatedAt: finalized.updatedAt }
             : conversation
         )));
+
+        // After title generation, auto-categorize the conversation
+        categorizeConversation(conversationId);
       }
     } catch (error) {
       console.error('Error generating title:', error);
+    }
+  };
+
+  const categorizeConversation = async (conversationId: string) => {
+    try {
+      const conversation = storage.getConversation(conversationId);
+      if (!conversation) return;
+
+      // Only auto-categorize if still uncategorized (race condition prevention)
+      if (conversation.projectId !== null) {
+        console.log('Conversation already categorized, skipping');
+        return;
+      }
+
+      // 1. Generate description
+      const descResponse = await fetch('/api/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversation.messages }),
+      });
+
+      if (!descResponse.ok) {
+        throw new Error(`Description API failed: ${descResponse.status}`);
+      }
+
+      const { description } = await descResponse.json();
+      conversation.description = description || "Untitled conversation";
+
+      // 2. Match project
+      const projects = storage.getProjects();
+      if (projects.length === 0) {
+        // No projects exist → skip matching, stay in Miscellaneous
+        conversation.projectId = null;
+        storage.saveConversation(conversation);
+        setConversations(storage.getConversations());
+        return;
+      }
+
+      const matchResponse = await fetch('/api/match-project', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationDescription: description,
+          projects: projects.map(p => ({ id: p.id, name: p.name, description: p.description })),
+        }),
+      });
+
+      if (!matchResponse.ok) {
+        throw new Error(`Match API failed: ${matchResponse.status}`);
+      }
+
+      const result = await matchResponse.json();
+
+      // Validate confidence
+      const confidence = typeof result.confidence === 'number'
+        ? Math.max(0, Math.min(1, result.confidence))
+        : 0.0;
+
+      // Re-check if conversation is still uncategorized (user might have moved it manually)
+      const currentConversation = storage.getConversation(conversationId);
+      if (!currentConversation || currentConversation.projectId !== null) {
+        console.log('Conversation was manually categorized, skipping auto-assignment');
+        return;
+      }
+
+      // Only assign if confidence meets threshold
+      if (confidence >= 0.7 && result.matchedProjectId) {
+        conversation.projectId = result.matchedProjectId;
+        console.log(`Auto-categorized to project ${result.matchedProjectId} with confidence ${confidence}`);
+      } else {
+        conversation.projectId = null; // Stay in Miscellaneous
+        console.log(`Low confidence (${confidence}), staying in Miscellaneous`);
+      }
+
+      // Save and update UI immediately
+      storage.saveConversation(conversation);
+      const updatedConversations = storage.getConversations();
+      setConversations(updatedConversations);
+
+    } catch (error) {
+      console.error('Auto-categorization failed:', error);
+      // Fallback: assign to Miscellaneous
+      const conversation = storage.getConversation(conversationId);
+      if (conversation) {
+        conversation.description = conversation.description || "Untitled conversation";
+        conversation.projectId = null;
+        storage.saveConversation(conversation);
+        setConversations(storage.getConversations());
+      }
     }
   };
 
@@ -571,6 +668,7 @@ export default function Chat() {
         onNewChat={handleNewChat}
         onDeleteConversation={handleDeleteConversation}
         onRenameConversation={handleRenameConversation}
+        onConversationsUpdate={handleConversationsUpdate}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
@@ -726,7 +824,7 @@ export default function Chat() {
                         </svg>
                       </div>
                       <h2 className="text-4xl font-semibold text-pure-black dark:text-pure-white mb-4 font-sans">
-                        Welcome to Claude
+                        Welcome to AI Nexus
                       </h2>
                       <p className="text-neutral-gray dark:text-neutral-gray text-lg font-sans mb-8">
                         Start a conversation by typing a message or click a sample prompt
@@ -993,7 +1091,7 @@ export default function Chat() {
               </div>
             )}
 
-            <div className="relative bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 focus-within:border-electric-yellow dark:focus-within:border-electric-yellow focus-within:shadow-electric-yellow/20 transition-all">
+            <div className="relative bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 focus-within:border-electric-yellow dark:focus-within:border-electric-yellow focus-within:shadow-electric-yellow/20 transition-all flex items-center">
               <input
                 id={fileInputId}
                 ref={fileInputRef}
@@ -1011,12 +1109,12 @@ export default function Chat() {
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 placeholder="Type your message..."
-                className="w-full px-5 pr-32 bg-transparent text-gray-900 dark:text-gray-100 placeholder-neutral-gray dark:placeholder-neutral-gray focus:outline-none resize-none max-h-[300px] rounded-claude-lg font-sans leading-[48px] overflow-y-hidden flex items-center"
+                className="w-full px-5 pr-32 py-5 bg-transparent text-gray-900 dark:text-gray-100 placeholder-neutral-gray dark:placeholder-neutral-gray focus:outline-none resize-none max-h-[300px] rounded-claude-lg font-sans leading-normal overflow-y-hidden"
                 disabled={isLoading}
                 rows={1}
-                style={{ height: '72px', paddingTop: '12px', paddingBottom: '12px' }}
+                style={{ minHeight: '56px' }}
               />
-              <div className={`absolute right-4 flex gap-2 transition-all ${isMultiline ? 'bottom-4' : 'top-1/2 -translate-y-1/2'}`}>
+              <div className={`absolute right-4 flex gap-2 transition-all ${isMultiline ? 'bottom-4' : ''}`}>
                 {isStreaming ? (
                   <button
                     type="button"
