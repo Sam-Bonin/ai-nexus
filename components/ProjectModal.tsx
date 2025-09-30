@@ -127,7 +127,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Frontend Development"
-                className="w-full px-3 py-2 bg-white dark:bg-dark-bg border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-electric-yellow/50 focus:border-electric-yellow"
+                className="w-full px-3 py-2 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-electric-yellow/50 focus:border-electric-yellow"
                 autoFocus
               />
             </div>
@@ -146,7 +146,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g., Building React applications and components"
                 rows={3}
-                className="w-full px-3 py-2 bg-white dark:bg-dark-bg border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-electric-yellow/50 focus:border-electric-yellow resize-none"
+                className="w-full px-3 py-2 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-electric-yellow/50 focus:border-electric-yellow resize-none"
               />
               <p className="text-xs text-neutral-gray dark:text-neutral-gray mt-1">
                 Be specific - this helps auto-categorize future conversations
