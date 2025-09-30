@@ -160,7 +160,9 @@ export default function Sidebar({
   const handleMoveConversation = (projectId: string | null) => {
     if (movingConversation) {
       storage.updateConversationProject(movingConversation.id, projectId);
-      // No need to update state here - parent will refresh via onSelectConversation
+      // Force parent to refresh by selecting the conversation again
+      // This triggers Chat.tsx to reload from storage
+      onSelectConversation(movingConversation.id);
     }
   };
 
