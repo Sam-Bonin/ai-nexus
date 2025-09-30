@@ -105,10 +105,10 @@ export default function ProjectSection({
             {projectMenuOpen && (
               <>
                 <div
-                  className="fixed inset-0 z-10"
+                  className="fixed inset-0 z-20"
                   onClick={() => setProjectMenuOpen(false)}
                 />
-                <div className="absolute right-0 mt-1 w-40 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 py-1 z-20">
+                <div className="absolute right-0 mt-1 w-40 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 py-1 z-30">
                   {onEditProject && (
                     <button
                       onClick={() => {
@@ -210,10 +210,10 @@ export default function ProjectSection({
                       {menuOpenId === conversation.id && (
                         <>
                           <div
-                            className="fixed inset-0 z-10"
+                            className="fixed inset-0 z-20"
                             onClick={() => setMenuOpenId(null)}
                           />
-                          <div className="absolute right-0 mt-1 w-48 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 py-1 z-20">
+                          <div className="absolute right-0 mt-1 w-48 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 py-1 z-30">
                             <button
                               onClick={() => handleRenameStart(conversation)}
                               className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"

@@ -56,7 +56,7 @@ export default function MoveConversationModal({
             >
               <div>
                 <div className="text-sm font-medium text-pure-black dark:text-pure-white">
-                  📦 Miscellaneous
+                  Miscellaneous
                 </div>
                 <div className="text-xs text-neutral-gray dark:text-neutral-gray mt-0.5">
                   Uncategorized conversations
