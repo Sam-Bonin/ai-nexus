@@ -1,4 +1,4 @@
-# Claude AI Clone
+# Nexus AI
 
 A Next.js implementation of Claude.ai using OpenRouter API with streaming responses, file attachments, and extended thinking mode.
 
