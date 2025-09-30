@@ -34,6 +34,7 @@ interface ProjectModalProps {
 export default function ProjectModal({ isOpen, onClose, onSave, project }: ProjectModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedColor, setSelectedColor] = useState(PROJECT_COLORS[0]);
   const [error, setError] = useState('');
 
   const isEditing = !!project;
@@ -43,9 +44,11 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
     if (project) {
       setName(project.name);
       setDescription(project.description);
+      setSelectedColor(project.color);
     } else {
       setName('');
       setDescription('');
+      setSelectedColor(PROJECT_COLORS[0]);
     }
     setError('');
   }, [project, isOpen]);
@@ -72,6 +75,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
         ...project,
         name: name.trim(),
         description: description.trim(),
+        color: selectedColor,
         updatedAt: now,
       });
     } else {
@@ -81,7 +85,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
         id: newProjectId,
         name: name.trim(),
         description: description.trim(),
-        color: assignProjectColor(newProjectId),
+        color: selectedColor,
         createdAt: now,
         updatedAt: now,
       });
@@ -151,6 +155,29 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
               <p className="text-xs text-neutral-gray dark:text-neutral-gray mt-1">
                 Be specific - this helps auto-categorize future conversations
               </p>
+            </div>
+
+            {/* Color picker */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                Project Color
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {PROJECT_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setSelectedColor(color)}
+                    className={`w-8 h-8 rounded-full transition-all ${
+                      selectedColor === color
+                        ? 'ring-2 ring-offset-2 ring-pure-black dark:ring-pure-white ring-offset-white dark:ring-offset-dark-gray scale-110'
+                        : 'hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Error message */}
