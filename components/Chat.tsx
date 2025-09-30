@@ -526,6 +526,11 @@ export default function Chat() {
         console.log(`Low confidence (${confidence}), staying in Miscellaneous`);
       }
 
+      // Save and update UI immediately
+      storage.saveConversation(conversation);
+      const updatedConversations = storage.getConversations();
+      setConversations(updatedConversations);
+
     } catch (error) {
       console.error('Auto-categorization failed:', error);
       // Fallback: assign to Miscellaneous
@@ -533,11 +538,6 @@ export default function Chat() {
       if (conversation) {
         conversation.description = conversation.description || "Untitled conversation";
         conversation.projectId = null;
-      }
-    } finally {
-      // Always save conversation
-      const conversation = storage.getConversation(conversationId);
-      if (conversation) {
         storage.saveConversation(conversation);
         setConversations(storage.getConversations());
       }
