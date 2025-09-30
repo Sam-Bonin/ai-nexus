@@ -5,6 +5,9 @@ import { Conversation, Project } from '@/types/chat';
 import { storage } from '@/lib/storage';
 import { exportConversationAsMarkdown, exportConversationAsJSON, downloadFile } from '@/lib/utils';
 import ProjectSection from './ProjectSection';
+import ProjectModal from './ProjectModal';
+import MoveConversationModal from './MoveConversationModal';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -33,6 +36,14 @@ export default function Sidebar({
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+
+  // Project management modals
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const [movingConversation, setMovingConversation] = useState<Conversation | null>(null);
+  const [deleteProjectModalOpen, setDeleteProjectModalOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
 
   // Load projects and expand state from localStorage
   useEffect(() => {
@@ -106,6 +117,48 @@ export default function Sidebar({
     setEditingId(null);
   };
 
+  // Project management handlers
+  const handleCreateProject = () => {
+    setEditingProject(null);
+    setProjectModalOpen(true);
+  };
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project);
+    setProjectModalOpen(true);
+  };
+
+  const handleSaveProject = (project: Project) => {
+    storage.saveProject(project);
+    setProjects(storage.getProjects());
+  };
+
+  const handleDeleteProjectClick = (project: Project) => {
+    setDeletingProject(project);
+    setDeleteProjectModalOpen(true);
+  };
+
+  const handleDeleteProjectConfirm = () => {
+    if (deletingProject) {
+      storage.deleteProject(deletingProject.id);
+      setProjects(storage.getProjects());
+      // Refresh conversations to show they've moved to Miscellaneous
+      onNewChat(); // This will trigger a refresh in the parent
+    }
+  };
+
+  const handleMoveConversationClick = (conversation: Conversation) => {
+    setMovingConversation(conversation);
+    setMoveModalOpen(true);
+  };
+
+  const handleMoveConversation = (projectId: string | null) => {
+    if (movingConversation) {
+      storage.updateConversationProject(movingConversation.id, projectId);
+      // No need to update state here - parent will refresh via onSelectConversation
+    }
+  };
+
   const hasConversations = conversations.length > 0;
   const hasProjects = projects.length > 0;
 
@@ -132,15 +185,26 @@ export default function Sidebar({
             />
             <p className="text-xs text-neutral-gray dark:text-cloudy-400 mt-2 font-medium">Universal AI Interface</p>
           </div>
-          <button
-            onClick={onNewChat}
-            className="w-full px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600 text-pure-black rounded-claude-sm transition-colors font-medium flex items-center justify-center gap-2 shadow-claude-sm"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Chat
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onNewChat}
+              className="flex-1 px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600 text-pure-black rounded-claude-sm transition-colors font-medium flex items-center justify-center gap-2 shadow-claude-sm"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              New Chat
+            </button>
+            <button
+              onClick={handleCreateProject}
+              className="px-3 py-2 bg-pure-black/5 dark:bg-pure-white/5 hover:bg-pure-black/10 dark:hover:bg-pure-white/10 text-pure-black dark:text-pure-white rounded-claude-sm transition-colors font-medium shadow-claude-sm"
+              title="Create Project"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          </div>
 
           {/* Search input */}
           {hasConversations && (
@@ -184,9 +248,15 @@ export default function Sidebar({
               <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">
                 Create projects to auto-organize
               </p>
-              <p className="text-xs text-neutral-gray dark:text-neutral-gray">
-                Coming soon: Project management
+              <p className="text-xs text-neutral-gray dark:text-neutral-gray mb-3">
+                Group conversations by topic for easy access
               </p>
+              <button
+                onClick={handleCreateProject}
+                className="text-xs text-electric-yellow hover:text-vibrant-coral font-medium transition-colors"
+              >
+                + Create your first project
+              </button>
             </div>
           ) : null}
 
@@ -206,6 +276,9 @@ export default function Sidebar({
                 onSelectConversation={onSelectConversation}
                 onRenameConversation={onRenameConversation}
                 onDeleteConversation={onDeleteConversation}
+                onMoveConversation={handleMoveConversationClick}
+                onEditProject={handleEditProject}
+                onDeleteProject={handleDeleteProjectClick}
               />
             );
           })}
@@ -331,6 +404,15 @@ export default function Sidebar({
                                   </button>
                                   <button
                                     onClick={() => {
+                                      handleMoveConversationClick(conversation);
+                                      setMenuOpenId(null);
+                                    }}
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
+                                  >
+                                    Move to project...
+                                  </button>
+                                  <button
+                                    onClick={() => {
                                       onDeleteConversation(conversation.id);
                                       setMenuOpenId(null);
                                     }}
@@ -359,6 +441,32 @@ export default function Sidebar({
           )}
         </div>
       </aside>
+
+      {/* Modals */}
+      <ProjectModal
+        isOpen={projectModalOpen}
+        onClose={() => setProjectModalOpen(false)}
+        onSave={handleSaveProject}
+        project={editingProject}
+      />
+
+      <MoveConversationModal
+        isOpen={moveModalOpen}
+        onClose={() => setMoveModalOpen(false)}
+        onMove={handleMoveConversation}
+        projects={projects}
+        currentProjectId={movingConversation?.projectId || null}
+        conversationTitle={movingConversation?.title || ''}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={deleteProjectModalOpen}
+        onClose={() => setDeleteProjectModalOpen(false)}
+        onConfirm={handleDeleteProjectConfirm}
+        title="Delete Project"
+        message={`Are you sure you want to delete "${deletingProject?.name}"? All conversations in this project will be moved to Miscellaneous.`}
+        confirmText="Delete Project"
+      />
     </>
   );
 }
