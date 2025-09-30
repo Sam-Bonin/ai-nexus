@@ -71,10 +71,17 @@ export default function Sidebar({
         {/* Header */}
         <div className="p-4 border-b border-pure-black/10 dark:border-pure-white/10">
           <div className="mb-4">
-            <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-electric-yellow via-vibrant-coral to-crail">
-              AI Nexus
-            </h1>
-            <p className="text-xs text-neutral-gray dark:text-cloudy-400 mt-1 font-medium">Universal AI Interface</p>
+            <img
+              src="/logo-light.png"
+              alt="AI Nexus"
+              className="w-52 h-auto block dark:hidden"
+            />
+            <img
+              src="/logo-dark.png"
+              alt="AI Nexus"
+              className="w-52 h-auto hidden dark:block"
+            />
+            <p className="text-xs text-neutral-gray dark:text-cloudy-400 mt-2 font-medium">Universal AI Interface</p>
           </div>
           <button
             onClick={onNewChat}

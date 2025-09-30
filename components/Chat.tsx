@@ -726,7 +726,7 @@ export default function Chat() {
                         </svg>
                       </div>
                       <h2 className="text-4xl font-semibold text-pure-black dark:text-pure-white mb-4 font-sans">
-                        Welcome to Claude
+                        Welcome to AI Nexus
                       </h2>
                       <p className="text-neutral-gray dark:text-neutral-gray text-lg font-sans mb-8">
                         Start a conversation by typing a message or click a sample prompt
