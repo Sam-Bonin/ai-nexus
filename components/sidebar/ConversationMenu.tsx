@@ -3,7 +3,7 @@
 import { Conversation } from '@/types/chat';
 import { exportConversationAsMarkdown, exportConversationAsJSON, downloadFile } from '@/lib/utils';
 
-interface ConversationDropdownProps {
+interface ConversationMenuProps {
   conversation: Conversation;
   isOpen: boolean;
   position: { top: number; right: number } | null;
@@ -13,7 +13,7 @@ interface ConversationDropdownProps {
   onDelete: (id: string) => void;
 }
 
-export default function ConversationDropdown({
+export function ConversationMenu({
   conversation,
   isOpen,
   position,
@@ -21,7 +21,7 @@ export default function ConversationDropdown({
   onRename,
   onMove,
   onDelete,
-}: ConversationDropdownProps) {
+}: ConversationMenuProps) {
   if (!isOpen || !position) return null;
 
   const handleExport = (format: 'markdown' | 'json') => {
