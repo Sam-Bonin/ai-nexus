@@ -23,7 +23,7 @@ export function ChatHeader({
   onNewChat,
 }: ChatHeaderProps) {
   return (
-    <header className="bg-pure-white dark:bg-dark-gray border-b border-pure-black/10 dark:border-pure-white/10 px-4 py-3 flex justify-between items-center">
+    <header className="sticky top-0 z-30 bg-pure-white/95 dark:bg-dark-gray/95 backdrop-blur border-b border-pure-black/10 dark:border-pure-white/10 px-4 py-3 flex justify-between items-center">
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleSidebar}

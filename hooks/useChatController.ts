@@ -310,6 +310,8 @@ export function useChatController(): UseChatControllerResult {
         },
       ];
 
+      setMessages(finalMessages);
+
       const isNewConversation = !activeConversationId && finalMessages.length === 2;
       const conversationId = saveCurrentConversation(finalMessages);
 

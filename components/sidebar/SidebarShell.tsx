@@ -19,7 +19,6 @@ interface SidebarShellProps {
   onRenameConversation: (id: string, newTitle: string) => void;
   onConversationsUpdate?: () => void;
   isOpen: boolean;
-  onToggle: () => void;
 }
 
 export function SidebarShell({
@@ -31,7 +30,6 @@ export function SidebarShell({
   onRenameConversation,
   onConversationsUpdate,
   isOpen,
-  onToggle,
 }: SidebarShellProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -136,9 +134,9 @@ export function SidebarShell({
 
   return (
     <aside
-      className={`h-full bg-pure-white dark:bg-dark-gray border-r border-pure-black/10 dark:border-pure-white/10 transition-all duration-300 ${
-        isOpen ? 'w-72' : 'w-0'
-      } flex flex-col shadow-claude-md font-sans overflow-hidden`}
+      className={`relative h-full flex-shrink-0 bg-pure-white dark:bg-dark-gray transition-[transform,width] duration-300 ease-in-out ${
+        isOpen ? 'w-72 translate-x-0 border-r border-pure-black/10 dark:border-pure-white/10 shadow-claude-md' : 'w-72 -translate-x-full md:w-0 md:translate-x-0 md:border-r-0 md:shadow-none'
+      } font-sans overflow-hidden`}
     >
       <SidebarHeader
         onNewChat={onNewChat}
@@ -148,7 +146,7 @@ export function SidebarShell({
         onSearchChange={setSearchQuery}
       />
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2 [scrollbar-width:none] [-ms-overflow-style:'none'] [&::-webkit-scrollbar]:hidden">
         {!hasConversations && !hasProjects ? (
           <div className="px-4 py-8 text-center">
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">No conversations yet</p>
@@ -247,14 +245,6 @@ export function SidebarShell({
           </div>
         )}
       </div>
-
-      <button
-        onClick={onToggle}
-        className="absolute top-4 -right-3 w-6 h-6 bg-electric-yellow text-pure-black rounded-full shadow-claude-md flex items-center justify-center"
-        aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-      >
-        {isOpen ? '<' : '>'}
-      </button>
 
       <ProjectModal
         isOpen={projectModalOpen}

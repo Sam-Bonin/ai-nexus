@@ -99,7 +99,10 @@ export function ChatMessageList({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto relative" ref={containerRef}>
+    <div
+      className="flex-1 overflow-y-auto relative [scrollbar-width:none] [-ms-overflow-style:'none'] [&::-webkit-scrollbar]:hidden"
+      ref={containerRef}
+    >
       <div className="max-w-[900px] mx-auto min-h-full flex flex-col pb-[140px]">
         <div className="flex-1 flex items-center justify-center">
           {messages.length === 0 ? (

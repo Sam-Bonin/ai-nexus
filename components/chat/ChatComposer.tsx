@@ -29,7 +29,6 @@ interface ChatComposerProps {
   setThinkingEnabled: (value: boolean) => void;
   error: string | null;
   clearError: () => void;
-  sidebarOpen: boolean;
 }
 
 export function ChatComposer({
@@ -49,7 +48,6 @@ export function ChatComposer({
   setThinkingEnabled,
   error,
   clearError,
-  sidebarOpen,
 }: ChatComposerProps) {
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [isMultiline, setIsMultiline] = useState(false);
@@ -82,11 +80,8 @@ export function ChatComposer({
   };
 
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-pure-white via-pure-white to-pure-white/0 dark:from-dark-gray dark:via-dark-gray dark:to-dark-gray/0 pt-2 pb-4 pointer-events-none"
-      style={{ left: sidebarOpen ? '288px' : '0' }}
-    >
-      <div className="max-w-[900px] mx-auto px-6 pointer-events-auto">
+    <div className="border-t border-pure-black/10 dark:border-pure-white/10 bg-gradient-to-t from-pure-white via-pure-white to-pure-white/0 dark:from-dark-gray dark:via-dark-gray dark:to-dark-gray/0">
+      <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-4">
         {error && (
           <div className="mb-3 px-6 py-3 bg-electric-yellow/10 dark:bg-electric-yellow/10 rounded-claude-md">
             <div className="flex items-center gap-2">

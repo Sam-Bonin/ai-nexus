@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Sidebar from '@/components/sidebar';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessageList } from './ChatMessageList';
@@ -55,22 +55,6 @@ export function ChatShell() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault();
-        handleNewChat();
-      }
-      if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
-        event.preventDefault();
-        setSidebarOpen(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNewChat]);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -83,24 +67,60 @@ export function ChatShell() {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev);
+  }, []);
+
+  const handleConversationSelect = useCallback(
+    (id: string) => {
+      loadConversation(id);
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      }
+    },
+    [loadConversation]
+  );
+
+  const handleSidebarNewChat = useCallback(() => {
+    handleNewChat();
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  }, [handleNewChat]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        handleNewChat();
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+        event.preventDefault();
+        toggleSidebar();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleNewChat, toggleSidebar]);
+
   return (
-    <div className="flex h-screen bg-gradient-to-br from-electric-yellow/20 via-pure-white to-vibrant-coral/20 dark:bg-gradient-to-br dark:from-electric-yellow/10 dark:via-dark-gray dark:to-vibrant-coral/10">
+    <div className="fixed inset-0 flex overflow-hidden bg-gradient-to-br from-electric-yellow/20 via-pure-white to-vibrant-coral/20 dark:bg-gradient-to-br dark:from-electric-yellow/10 dark:via-dark-gray dark:to-vibrant-coral/10">
       <Sidebar
         conversations={conversations}
         activeConversationId={activeConversationId}
-        onSelectConversation={loadConversation}
-        onNewChat={handleNewChat}
+        onSelectConversation={handleConversationSelect}
+        onNewChat={handleSidebarNewChat}
         onDeleteConversation={handleDeleteConversation}
         onRenameConversation={handleRenameConversation}
         onConversationsUpdate={handleConversationsUpdate}
         isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <ChatHeader
           sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen(prev => !prev)}
+          onToggleSidebar={toggleSidebar}
           selectedModel={selectedModel}
           onSelectModel={setSelectedModel}
           theme={theme}
@@ -108,15 +128,17 @@ export function ChatShell() {
           onNewChat={handleNewChat}
         />
 
-        <ChatMessageList
-          messages={messages}
-          isLoading={isLoading}
-          containerRef={messagesContainerRef}
-          endRef={messagesEndRef}
-          onScrollToBottom={scrollToBottom}
-          onSelectPrompt={(prompt) => setInput(prompt)}
-          focusComposer={focusComposer}
-        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <ChatMessageList
+            messages={messages}
+            isLoading={isLoading}
+            containerRef={messagesContainerRef}
+            endRef={messagesEndRef}
+            onScrollToBottom={scrollToBottom}
+            onSelectPrompt={(prompt) => setInput(prompt)}
+            focusComposer={focusComposer}
+          />
+        </div>
 
         <ChatComposer
           input={input}
@@ -135,7 +157,6 @@ export function ChatShell() {
           setThinkingEnabled={setThinkingEnabled}
           error={error}
           clearError={() => setError(null)}
-          sidebarOpen={sidebarOpen}
         />
       </div>
     </div>
