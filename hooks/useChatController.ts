@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ClipboardEvent as ReactClipboardEvent, type FormEvent as ReactFormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ClipboardEvent as ReactClipboardEvent, type FormEvent as ReactFormEvent } from 'react';
 import { Conversation, FileAttachment, Message, ModelId } from '@/types/chat';
 import { storage } from '@/lib/storage';
 import { generateId, generateConversationTitle as generateTitleFallback } from '@/lib/utils';
@@ -57,18 +57,16 @@ export function useChatController(): UseChatControllerResult {
   const [thinkingEnabled, setThinkingEnabled] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    const savedConversations = storage.getConversations();
-    setConversations(savedConversations);
-
-    const activeId = storage.getActiveConversationId();
-    if (activeId && savedConversations.find(c => c.id === activeId)) {
-      loadConversation(activeId, savedConversations);
-    }
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
-  const loadConversation = (id: string, existing?: Conversation[]) => {
+  const loadConversation = useCallback((id: string, existing?: Conversation[]) => {
     const source = existing ?? storage.getConversations();
     const conversation = source.find(c => c.id === id) || storage.getConversation(id);
 
@@ -80,7 +78,17 @@ export function useChatController(): UseChatControllerResult {
         setSelectedModel(conversation.model);
       }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const savedConversations = storage.getConversations();
+    setConversations(savedConversations);
+
+    const activeId = storage.getActiveConversationId();
+    if (activeId && savedConversations.find(c => c.id === activeId)) {
+      loadConversation(activeId, savedConversations);
+    }
+  }, [loadConversation]);
 
   const saveCurrentConversation = (updatedMessages: Message[]): string | null => {
     if (activeConversationId) {
@@ -215,6 +223,9 @@ export function useChatController(): UseChatControllerResult {
       }
 
       for (let i = 1; i <= fullTitle.length; i++) {
+        if (!isMountedRef.current) {
+          break;
+        }
         const partialTitle = fullTitle.substring(0, i);
         setConversations(prev => {
           let updated = false;
@@ -320,10 +331,13 @@ export function useChatController(): UseChatControllerResult {
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
-        const currentMessages = messages.filter(m => m.content !== '');
-        if (currentMessages.length > 0) {
-          saveCurrentConversation(currentMessages);
-        }
+        setMessages(prev => {
+          const currentMessages = prev.filter(m => m.content !== '');
+          if (currentMessages.length > 0) {
+            saveCurrentConversation(currentMessages);
+          }
+          return currentMessages;
+        });
       } else {
         console.error('Error:', err);
         setError(err.message || 'An error occurred. Please try again.');
