@@ -1,18 +1,17 @@
 'use client';
 
-import { MutableRefObject, useEffect, useState } from 'react';
+import { MutableRefObject, useEffect } from 'react';
 import MessageComponent from '@/components/Message';
 import { Message } from '@/types/chat';
-import { ScrollToBottomButton } from './ScrollToBottomButton';
 
 interface ChatMessageListProps {
   messages: Message[];
   isLoading: boolean;
   containerRef: MutableRefObject<HTMLDivElement | null>;
   endRef: MutableRefObject<HTMLDivElement | null>;
-  onScrollToBottom: () => void;
   onSelectPrompt: (prompt: string) => void;
   focusComposer: () => void;
+  onShowScrollButtonChange: (show: boolean) => void;
 }
 
 const SAMPLE_PROMPTS = [
@@ -63,12 +62,10 @@ export function ChatMessageList({
   isLoading,
   containerRef,
   endRef,
-  onScrollToBottom,
   onSelectPrompt,
   focusComposer,
+  onShowScrollButtonChange,
 }: ChatMessageListProps) {
-  const [showScrollButton, setShowScrollButton] = useState(false);
-
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -77,14 +74,19 @@ export function ChatMessageList({
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      setShowScrollButton(!isNearBottom && messages.length > 0);
+      const totalScrollableDistance = scrollHeight - clientHeight;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      const scrollPercentage = totalScrollableDistance > 0 ? distanceFromBottom / totalScrollableDistance : 0;
+
+      // Show button when user has scrolled up beyond 33% of total chat length
+      const hasScrolledUp = scrollPercentage > 0.33;
+      onShowScrollButtonChange(hasScrolledUp && messages.length > 0);
     };
 
     handleScroll();
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [containerRef, messages.length]);
+  }, [containerRef, messages.length, onShowScrollButtonChange]);
 
   const shouldShowLoadingIndicator =
     isLoading &&
@@ -102,8 +104,12 @@ export function ChatMessageList({
     <div
       className="flex-1 overflow-y-auto relative [scrollbar-width:none] [-ms-overflow-style:'none'] [&::-webkit-scrollbar]:hidden"
       ref={containerRef}
+      style={{
+        maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 120px), transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 120px), transparent 100%)',
+      }}
     >
-      <div className="max-w-[900px] mx-auto min-h-full flex flex-col pb-[140px]">
+      <div className="max-w-[900px] mx-auto min-h-full flex flex-col pb-[20px]">
         <div className="flex-1 flex items-center justify-center">
           {messages.length === 0 ? (
             <div className="w-full px-4 py-8">
@@ -184,7 +190,6 @@ export function ChatMessageList({
           )}
         </div>
       </div>
-      {showScrollButton && <ScrollToBottomButton onClick={onScrollToBottom} />}
     </div>
   );
 }

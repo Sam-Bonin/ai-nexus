@@ -5,6 +5,7 @@ import Sidebar from '@/components/sidebar';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessageList } from './ChatMessageList';
 import { ChatComposer } from './ChatComposer';
+import { ScrollToBottomButton } from './ScrollToBottomButton';
 import { useChatController } from '@/hooks/useChatController';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -38,6 +39,7 @@ export function ChatShell() {
   const { theme, setTheme } = useTheme();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -105,7 +107,24 @@ export function ChatShell() {
   }, [handleNewChat, toggleSidebar]);
 
   return (
-    <div className="fixed inset-0 flex overflow-hidden bg-gradient-to-br from-electric-yellow/20 via-pure-white to-vibrant-coral/20 dark:bg-gradient-to-br dark:from-electric-yellow/10 dark:via-dark-gray dark:to-vibrant-coral/10">
+    <div
+      className="fixed inset-0 flex overflow-hidden"
+      style={{
+        background: theme === 'dark'
+          ? `
+            radial-gradient(circle at 20% 20%, rgba(255, 213, 15, 0.04) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(253, 118, 91, 0.04) 0%, transparent 50%),
+            linear-gradient(135deg, rgba(255, 213, 15, 0.03) 0%, transparent 40%, rgba(253, 118, 91, 0.03) 100%),
+            #1a1a1a
+          `
+          : `
+            radial-gradient(circle at 20% 20%, rgba(255, 213, 15, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(253, 118, 91, 0.08) 0%, transparent 50%),
+            linear-gradient(135deg, rgba(255, 213, 15, 0.06) 0%, rgba(255, 255, 255, 1) 40%, rgba(253, 118, 91, 0.06) 100%),
+            #ffffff
+          `,
+      }}
+    >
       <Sidebar
         conversations={conversations}
         activeConversationId={activeConversationId}
@@ -128,16 +147,17 @@ export function ChatShell() {
           onNewChat={handleNewChat}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden relative">
           <ChatMessageList
             messages={messages}
             isLoading={isLoading}
             containerRef={messagesContainerRef}
             endRef={messagesEndRef}
-            onScrollToBottom={scrollToBottom}
             onSelectPrompt={(prompt) => setInput(prompt)}
             focusComposer={focusComposer}
+            onShowScrollButtonChange={setShowScrollButton}
           />
+          {showScrollButton && <ScrollToBottomButton onClick={scrollToBottom} />}
         </div>
 
         <ChatComposer

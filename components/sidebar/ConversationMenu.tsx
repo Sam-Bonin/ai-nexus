@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Conversation } from '@/types/chat';
 import { exportConversationAsMarkdown, exportConversationAsJSON, downloadFile } from '@/lib/utils';
 
@@ -22,7 +24,13 @@ export function ConversationMenu({
   onMove,
   onDelete,
 }: ConversationMenuProps) {
-  if (!isOpen || !position) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !position || !mounted) return null;
 
   const handleExport = (format: 'markdown' | 'json') => {
     const content = format === 'markdown'
@@ -48,12 +56,15 @@ export function ConversationMenu({
     ? Math.max(10, position.top - dropdownHeight - 8) // 8px gap from button
     : position.top;
 
-  return (
+  const menuContent = (
     <>
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-[100]"
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
       />
 
       {/* Dropdown menu with fixed positioning */}
@@ -63,6 +74,7 @@ export function ConversationMenu({
           top: `${adjustedTop}px`,
           right: `${position.right}px`,
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={() => {
@@ -108,4 +120,6 @@ export function ConversationMenu({
       </div>
     </>
   );
+
+  return createPortal(menuContent, document.body);
 }

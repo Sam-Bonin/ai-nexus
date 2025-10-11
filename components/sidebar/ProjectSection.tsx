@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Conversation, Project } from '@/types/chat';
 import { ConversationListItem } from './ConversationListItem';
+import { ProjectMenu } from './ProjectMenu';
 
 interface ProjectSectionProps {
   project: Project;
@@ -32,6 +33,7 @@ export function ProjectSection({
   onDeleteProject,
 }: ProjectSectionProps) {
   const [projectMenuOpen, setProjectMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
 
   const sortedConversations = [...conversations].sort((a, b) => b.updatedAt - a.updatedAt);
 
@@ -71,7 +73,18 @@ export function ProjectSection({
             <button
               onClick={(event) => {
                 event.stopPropagation();
-                setProjectMenuOpen(prev => !prev);
+                if (projectMenuOpen) {
+                  setProjectMenuOpen(false);
+                  setMenuPosition(null);
+                  return;
+                }
+
+                const rect = event.currentTarget.getBoundingClientRect();
+                setMenuPosition({
+                  top: rect.bottom + 4,
+                  right: window.innerWidth - rect.right,
+                });
+                setProjectMenuOpen(true);
               }}
               className="p-1 rounded-claude-sm hover:bg-pure-black/5 dark:hover:bg-pure-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
             >
@@ -79,35 +92,15 @@ export function ProjectSection({
                 <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
               </svg>
             </button>
-            {projectMenuOpen && (
-              <>
-                <div className="fixed inset-0 z-[200]" onClick={() => setProjectMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 w-40 bg-pure-white dark:bg-dark-gray rounded-claude-md shadow-claude-lg border border-pure-black dark:border-pure-white py-1 z-[210] max-h-[80vh] overflow-y-auto">
-                  {onEditProject && (
-                    <button
-                      onClick={() => {
-                        onEditProject(project);
-                        setProjectMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                    >
-                      Edit Project
-                    </button>
-                  )}
-                  {onDeleteProject && (
-                    <button
-                      onClick={() => {
-                        onDeleteProject(project);
-                        setProjectMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-vibrant-coral dark:text-vibrant-coral hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
-                    >
-                      Delete Project
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
+
+            <ProjectMenu
+              project={project}
+              isOpen={projectMenuOpen}
+              position={menuPosition}
+              onClose={() => setProjectMenuOpen(false)}
+              onEditProject={onEditProject}
+              onDeleteProject={onDeleteProject}
+            />
           </div>
         )}
       </div>

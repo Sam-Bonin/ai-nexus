@@ -80,7 +80,7 @@ export function ChatComposer({
   };
 
   return (
-    <div className="border-t border-pure-black/10 dark:border-pure-white/10 bg-gradient-to-t from-pure-white via-pure-white to-pure-white/0 dark:from-dark-gray dark:via-dark-gray dark:to-dark-gray/0">
+    <div className="bg-gradient-to-t from-pure-white via-pure-white to-pure-white/0 dark:from-dark-gray dark:via-dark-gray dark:to-dark-gray/0">
       <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-4">
         {error && (
           <div className="mb-3 px-6 py-3 bg-electric-yellow/10 dark:bg-electric-yellow/10 rounded-claude-md">

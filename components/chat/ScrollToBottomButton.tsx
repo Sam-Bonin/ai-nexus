@@ -8,7 +8,7 @@ export function ScrollToBottomButton({ onClick }: ScrollToBottomButtonProps) {
   return (
     <button
       onClick={onClick}
-      className="absolute bottom-6 right-6 p-3 bg-pure-white/90 dark:bg-dark-gray/90 backdrop-blur border border-pure-black/10 dark:border-pure-white/10 text-electric-yellow hover:bg-pure-black/5 dark:hover:bg-pure-white/5 rounded-full shadow-claude-lg transition-all hover:scale-110"
+      className="fixed bottom-[180px] right-6 p-3 bg-pure-white/90 dark:bg-dark-gray/90 backdrop-blur border border-pure-black/10 dark:border-pure-white/10 text-electric-yellow hover:bg-pure-black/5 dark:hover:bg-pure-white/5 rounded-full shadow-claude-lg transition-all hover:scale-110 z-10"
       aria-label="Scroll to bottom"
     >
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
