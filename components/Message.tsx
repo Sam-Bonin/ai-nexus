@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeBlock from './CodeBlock';
 import { Message as MessageType } from '@/types/chat';
+import { formatDuration, formatModelName } from '@/lib/format';
 
 interface MessageProps {
   message: MessageType;
@@ -25,16 +26,6 @@ export default function Message({ message }: MessageProps) {
     setThinkingExpanded(false);
     setHasCollapsed(true);
   }
-
-  const formatDuration = (ms: number) => {
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
-  };
-
-  const formatModelName = (modelId: string) => {
-    const parts = modelId.split('/');
-    return parts[parts.length - 1];
-  };
 
   return (
     <div

@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Conversation } from '@/types/chat';
 import { exportConversationAsMarkdown, exportConversationAsJSON, downloadFile } from '@/lib/utils';
 
-interface ConversationDropdownProps {
+interface ConversationMenuProps {
   conversation: Conversation;
   isOpen: boolean;
   position: { top: number; right: number } | null;
@@ -13,7 +15,7 @@ interface ConversationDropdownProps {
   onDelete: (id: string) => void;
 }
 
-export default function ConversationDropdown({
+export function ConversationMenu({
   conversation,
   isOpen,
   position,
@@ -21,8 +23,14 @@ export default function ConversationDropdown({
   onRename,
   onMove,
   onDelete,
-}: ConversationDropdownProps) {
-  if (!isOpen || !position) return null;
+}: ConversationMenuProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !position || !mounted) return null;
 
   const handleExport = (format: 'markdown' | 'json') => {
     const content = format === 'markdown'
@@ -48,12 +56,15 @@ export default function ConversationDropdown({
     ? Math.max(10, position.top - dropdownHeight - 8) // 8px gap from button
     : position.top;
 
-  return (
+  const menuContent = (
     <>
       {/* Backdrop */}
       <div
         className="fixed inset-0 z-[100]"
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
       />
 
       {/* Dropdown menu with fixed positioning */}
@@ -63,6 +74,7 @@ export default function ConversationDropdown({
           top: `${adjustedTop}px`,
           right: `${position.right}px`,
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={() => {
@@ -108,4 +120,6 @@ export default function ConversationDropdown({
       </div>
     </>
   );
+
+  return createPortal(menuContent, document.body);
 }
