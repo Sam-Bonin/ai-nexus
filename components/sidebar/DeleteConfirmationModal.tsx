@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,23 +20,36 @@ export default function DeleteConfirmationModal({
   message,
   confirmText = 'Delete',
 }: DeleteConfirmationModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleConfirm = () => {
     onConfirm();
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modalContent = (
     <>
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-pure-black/50 dark:bg-pure-black/70 backdrop-blur-sm z-[120] animate-in fade-in duration-200"
-        onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 flex items-center justify-center z-[130] p-4">
+      <div
+        className="fixed inset-0 flex items-center justify-center z-[130] p-4"
+        onClick={(e) => {
+          // Only close if clicking the container itself, not its children
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+      >
         <div className="bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
           <h2 className="text-lg font-semibold text-pure-black dark:text-pure-white mb-3">
             {title}
@@ -61,4 +77,6 @@ export default function DeleteConfirmationModal({
       </div>
     </>
   );
+
+  return createPortal(modalContent, document.body);
 }
