@@ -47,6 +47,26 @@ export function useTheme() {
       root.style.setProperty(`--color-${camelToKebab(key)}`, value);
     });
 
+    // Inject gradient-specific CSS variables with luminosity-adaptive opacity
+    const rgbToRgba = (rgb: string, alpha: number): string => {
+      return `rgba(${rgb.replace(/ /g, ', ')}, ${alpha})`;
+    };
+
+    const baseOpacityRadial = effectiveBrightness === 'dark' ? 0.04 : 0.08;
+    const baseOpacityLinear = effectiveBrightness === 'dark' ? 0.03 : 0.06;
+
+    const adaptiveOpacityRadial = baseOpacityRadial * colors.luminosityFactor;
+    const adaptiveOpacityLinear = baseOpacityLinear * colors.luminosityFactor;
+
+    root.style.setProperty('--gradient-primary-radial', rgbToRgba(colors.primary, adaptiveOpacityRadial));
+    root.style.setProperty('--gradient-secondary-radial', rgbToRgba(colors.secondary, adaptiveOpacityRadial));
+    root.style.setProperty('--gradient-primary-linear', rgbToRgba(colors.primary, adaptiveOpacityLinear));
+    root.style.setProperty('--gradient-secondary-linear', rgbToRgba(colors.secondary, adaptiveOpacityLinear));
+
+    // Set base background color based on brightness
+    const baseBackgroundColor = effectiveBrightness === 'dark' ? '#1a1a1a' : '#ffffff';
+    root.style.setProperty('--gradient-base-bg', baseBackgroundColor);
+
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
@@ -77,13 +97,7 @@ export function useTheme() {
 
   return {
     themeSettings,
-    resolvedBrightness,
-    setThemeSettings,
     setBrightness,
     setPalette,
-    // Legacy support for components still using 'theme'
-    theme: themeSettings.brightness,
-    setTheme: setBrightness,
-    resolvedTheme: resolvedBrightness,
   };
 }

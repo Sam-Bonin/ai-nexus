@@ -8,7 +8,6 @@ import { ChatComposer } from './ChatComposer';
 import { ScrollToBottomButton } from './ScrollToBottomButton';
 import { useChatController } from '@/hooks/useChatController';
 import { useTheme } from '@/hooks/useTheme';
-import { COLOR_PALETTES } from '@/lib/colorPalettes';
 
 export function ChatShell() {
   const {
@@ -37,7 +36,7 @@ export function ChatShell() {
     loadConversation,
     setError,
   } = useChatController();
-  const { theme, setTheme, themeSettings, resolvedBrightness } = useTheme();
+  useTheme(); // Initialize theme system
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -45,17 +44,6 @@ export function ChatShell() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Helper function to convert RGB string to rgba
-  const rgbToRgba = (rgb: string, alpha: number): string => {
-    return `rgba(${rgb}, ${alpha})`;
-  };
-
-  // Get colors from current palette
-  const colors = COLOR_PALETTES[themeSettings.palette];
-  const opacity = resolvedBrightness === 'dark' ? 0.04 : 0.08;
-  const primaryRgba = rgbToRgba(colors.primary, opacity);
-  const secondaryRgba = rgbToRgba(colors.secondary, opacity);
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -75,10 +63,6 @@ export function ChatShell() {
 
   const focusComposer = () => {
     textareaRef.current?.focus();
-  };
-
-  const cycleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   const toggleSidebar = useCallback(() => {
@@ -122,19 +106,12 @@ export function ChatShell() {
     <div
       className="fixed inset-0 flex overflow-hidden"
       style={{
-        background: resolvedBrightness === 'dark'
-          ? `
-            radial-gradient(circle at 20% 20%, ${primaryRgba} 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, ${secondaryRgba} 0%, transparent 50%),
-            linear-gradient(135deg, ${rgbToRgba(colors.primary, 0.03)} 0%, transparent 40%, ${rgbToRgba(colors.secondary, 0.03)} 100%),
-            #1a1a1a
-          `
-          : `
-            radial-gradient(circle at 20% 20%, ${primaryRgba} 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, ${secondaryRgba} 0%, transparent 50%),
-            linear-gradient(135deg, ${rgbToRgba(colors.primary, 0.06)} 0%, rgba(255, 255, 255, 1) 40%, ${rgbToRgba(colors.secondary, 0.06)} 100%),
-            #ffffff
-          `,
+        background: `
+          radial-gradient(circle at 20% 20%, var(--gradient-primary-radial) 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, var(--gradient-secondary-radial) 0%, transparent 50%),
+          linear-gradient(135deg, var(--gradient-primary-linear) 0%, transparent 40%, var(--gradient-secondary-linear) 100%),
+          var(--gradient-base-bg)
+        `,
       }}
     >
       <Sidebar
@@ -154,8 +131,6 @@ export function ChatShell() {
           onToggleSidebar={toggleSidebar}
           selectedModel={selectedModel}
           onSelectModel={setSelectedModel}
-          theme={theme}
-          onToggleTheme={cycleTheme}
           onNewChat={handleNewChat}
         />
 

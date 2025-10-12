@@ -6,6 +6,9 @@ export interface ColorTokens {
   // Semantic colors
   primaryBg: string;      // For buttons, active states (RGB format)
   primaryText: string;    // Text on primary backgrounds (RGB format)
+
+  // Visual adjustments
+  luminosityFactor: number; // Opacity multiplier for gradients (1.0 = baseline, higher = more visible)
 }
 
 export type ColorPalette = 'yellow' | 'blue' | 'purple' | 'green' | 'pink';
@@ -17,6 +20,7 @@ export const COLOR_PALETTES: Record<ColorPalette, ColorTokens> = {
     secondary: '253 118 91',
     primaryBg: '255 213 15',
     primaryText: '0 0 0',
+    luminosityFactor: 1.0,
   },
   blue: {
     primary: '59 130 246',
@@ -24,6 +28,7 @@ export const COLOR_PALETTES: Record<ColorPalette, ColorTokens> = {
     secondary: '6 182 212',
     primaryBg: '59 130 246',
     primaryText: '255 255 255',
+    luminosityFactor: 1.6,
   },
   purple: {
     primary: '168 85 247',
@@ -31,6 +36,7 @@ export const COLOR_PALETTES: Record<ColorPalette, ColorTokens> = {
     secondary: '236 72 153',
     primaryBg: '168 85 247',
     primaryText: '255 255 255',
+    luminosityFactor: 1.4,
   },
   green: {
     primary: '16 185 129',
@@ -38,6 +44,7 @@ export const COLOR_PALETTES: Record<ColorPalette, ColorTokens> = {
     secondary: '20 184 166',
     primaryBg: '16 185 129',
     primaryText: '255 255 255',
+    luminosityFactor: 1.5,
   },
   pink: {
     primary: '236 72 153',
@@ -45,6 +52,7 @@ export const COLOR_PALETTES: Record<ColorPalette, ColorTokens> = {
     secondary: '244 114 182',
     primaryBg: '236 72 153',
     primaryText: '255 255 255',
+    luminosityFactor: 1.3,
   },
 };
 

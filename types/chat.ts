@@ -6,9 +6,6 @@ export interface ThemeSettings {
   palette: ColorPalette;
 }
 
-// Keep existing Theme type for backward compatibility
-export type Theme = BrightnessMode;
-
 export interface FileAttachment {
   name: string;
   type: string;
