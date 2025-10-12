@@ -36,7 +36,7 @@ export function ChatShell() {
     loadConversation,
     setError,
   } = useChatController();
-  const { theme, setTheme } = useTheme();
+  useTheme(); // Initialize theme system
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -63,10 +63,6 @@ export function ChatShell() {
 
   const focusComposer = () => {
     textareaRef.current?.focus();
-  };
-
-  const cycleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   const toggleSidebar = useCallback(() => {
@@ -110,19 +106,12 @@ export function ChatShell() {
     <div
       className="fixed inset-0 flex overflow-hidden"
       style={{
-        background: theme === 'dark'
-          ? `
-            radial-gradient(circle at 20% 20%, rgba(255, 213, 15, 0.04) 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(253, 118, 91, 0.04) 0%, transparent 50%),
-            linear-gradient(135deg, rgba(255, 213, 15, 0.03) 0%, transparent 40%, rgba(253, 118, 91, 0.03) 100%),
-            #1a1a1a
-          `
-          : `
-            radial-gradient(circle at 20% 20%, rgba(255, 213, 15, 0.08) 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(253, 118, 91, 0.08) 0%, transparent 50%),
-            linear-gradient(135deg, rgba(255, 213, 15, 0.06) 0%, rgba(255, 255, 255, 1) 40%, rgba(253, 118, 91, 0.06) 100%),
-            #ffffff
-          `,
+        background: `
+          radial-gradient(circle at 20% 20%, var(--gradient-primary-radial) 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, var(--gradient-secondary-radial) 0%, transparent 50%),
+          linear-gradient(135deg, var(--gradient-primary-linear) 0%, transparent 40%, var(--gradient-secondary-linear) 100%),
+          var(--gradient-base-bg)
+        `,
       }}
     >
       <Sidebar
@@ -142,8 +131,6 @@ export function ChatShell() {
           onToggleSidebar={toggleSidebar}
           selectedModel={selectedModel}
           onSelectModel={setSelectedModel}
-          theme={theme}
-          onToggleTheme={cycleTheme}
           onNewChat={handleNewChat}
         />
 

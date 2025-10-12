@@ -19,6 +19,12 @@ const config: Config = {
         'neutral-gray': '#999999',
         background: "var(--background)",
         foreground: "var(--foreground)",
+        // Theme-aware colors using CSS variables with RGB format
+        'theme-primary': 'rgb(var(--color-primary) / <alpha-value>)',
+        'theme-primary-hover': 'rgb(var(--color-primary-hover) / <alpha-value>)',
+        'theme-secondary': 'rgb(var(--color-secondary) / <alpha-value>)',
+        'theme-primary-bg': 'rgb(var(--color-primary-bg) / <alpha-value>)',
+        'theme-primary-text': 'rgb(var(--color-primary-text) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],

@@ -40,7 +40,7 @@ export function SidebarHeader({
       <div className="space-y-2">
         <button
           onClick={onNewChat}
-          className="w-full px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600 text-pure-black rounded-claude-sm transition-colors font-medium flex items-center justify-center gap-2 shadow-claude-sm"
+          className="w-full px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-theme-primary-text rounded-claude-sm transition-colors font-medium flex items-center justify-center gap-2 shadow-claude-sm"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -66,7 +66,7 @@ export function SidebarHeader({
               value={searchQuery}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="Search conversations..."
-              className="w-full px-3 py-2 pl-9 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-electric-yellow/50 focus:border-electric-yellow"
+              className="w-full px-3 py-2 pl-9 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-theme-primary/50 focus:border-theme-primary"
             />
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cloudy-500 dark:text-cloudy-400"

@@ -58,7 +58,7 @@ export function ConversationListItem({
     <div
       className={`group flex items-center justify-between px-3 py-2 rounded-claude-sm cursor-pointer transition-colors ${
         isActive
-          ? 'bg-electric-yellow/10 dark:bg-electric-yellow/20 text-electric-yellow dark:text-electric-yellow'
+          ? 'bg-theme-primary/10 text-theme-primary'
           : 'hover:bg-pure-black/5 dark:hover:bg-pure-white/5 text-pure-black dark:text-pure-white'
       }`}
       onClick={() => {
@@ -83,7 +83,7 @@ export function ConversationListItem({
                 setEditingTitle(conversation.title);
               }
             }}
-            className="w-full bg-transparent border-b border-electric-yellow focus:outline-none text-sm font-medium"
+            className="w-full bg-transparent border-b border-theme-primary focus:outline-none text-sm font-medium"
             autoFocus
           />
         ) : (

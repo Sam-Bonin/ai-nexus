@@ -83,12 +83,12 @@ export function ChatComposer({
     <div className="bg-gradient-to-t from-pure-white via-pure-white to-pure-white/0 dark:from-dark-gray dark:via-dark-gray dark:to-dark-gray/0">
       <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-4">
         {error && (
-          <div className="mb-3 px-6 py-3 bg-electric-yellow/10 dark:bg-electric-yellow/10 rounded-claude-md">
+          <div className="mb-3 px-6 py-3 bg-theme-primary/10 dark:bg-theme-primary/10 rounded-claude-md">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-electric-yellow dark:text-electric-yellow flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-theme-primary dark:text-theme-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
-              <p className="text-electric-yellow dark:text-electric-yellow text-sm font-sans">{error}</p>
+              <p className="text-theme-primary dark:text-theme-primary text-sm font-sans">{error}</p>
             </div>
           </div>
         )}
@@ -100,8 +100,8 @@ export function ChatComposer({
               onClick={() => setPlusMenuOpen(prev => !prev)}
               className={`flex h-10 w-10 items-center justify-center rounded-full transition-all shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 ${
                 plusMenuOpen
-                  ? 'text-electric-yellow dark:text-electric-yellow bg-electric-yellow/10 dark:bg-electric-yellow/20 rotate-45'
-                  : 'text-neutral-gray dark:text-neutral-gray hover:text-electric-yellow dark:hover:text-electric-yellow bg-pure-white dark:bg-dark-gray hover:bg-pure-black/5 dark:hover:bg-pure-white/5'
+                  ? 'text-theme-primary dark:text-theme-primary bg-theme-primary/10 dark:bg-theme-primary/20 rotate-45'
+                  : 'text-neutral-gray dark:text-neutral-gray hover:text-theme-primary dark:hover:text-theme-primary bg-pure-white dark:bg-dark-gray hover:bg-pure-black/5 dark:hover:bg-pure-white/5'
               }`}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -120,7 +120,7 @@ export function ChatComposer({
               <div className="relative group">
                 <label
                   htmlFor={fileInputId}
-                  className="flex h-10 w-10 items-center justify-center text-neutral-gray dark:text-neutral-gray hover:text-electric-yellow dark:hover:text-electric-yellow bg-pure-white dark:bg-dark-gray hover:bg-pure-black/5 dark:hover:bg-pure-white/5 rounded-full transition-all shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 animate-fade-in cursor-pointer"
+                  className="flex h-10 w-10 items-center justify-center text-neutral-gray dark:text-neutral-gray hover:text-theme-primary dark:hover:text-theme-primary bg-pure-white dark:bg-dark-gray hover:bg-pure-black/5 dark:hover:bg-pure-white/5 rounded-full transition-all shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 animate-fade-in cursor-pointer"
                   style={{ animationDelay: '0ms' }}
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,8 +138,8 @@ export function ChatComposer({
                   onClick={() => setThinkingEnabled(!thinkingEnabled)}
                   className={`flex h-10 w-10 items-center justify-center rounded-full transition-all shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 ${
                     thinkingEnabled
-                      ? 'text-electric-yellow dark:text-electric-yellow bg-electric-yellow/10 dark:bg-electric-yellow/20'
-                      : 'text-neutral-gray dark:text-neutral-gray hover:text-electric-yellow dark:hover:text-electric-yellow bg-pure-white dark:bg-dark-gray hover:bg-pure-black/5 dark:hover:bg-pure-white/5'
+                      ? 'text-theme-primary dark:text-theme-primary bg-theme-primary/10 dark:bg-theme-primary/20'
+                      : 'text-neutral-gray dark:text-neutral-gray hover:text-theme-primary dark:hover:text-theme-primary bg-pure-white dark:bg-dark-gray hover:bg-pure-black/5 dark:hover:bg-pure-white/5'
                   }`}
                   style={{ animationDelay: '50ms' }}
                 >
@@ -163,7 +163,7 @@ export function ChatComposer({
         >
           <AttachmentPreviewList attachments={attachedFiles} onRemove={onRemoveFile} />
 
-          <div className="relative bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 focus-within:border-electric-yellow dark:focus-within:border-electric-yellow focus-within:shadow-electric-yellow/20 transition-all flex items-center">
+          <div className="relative bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-md border border-pure-black/10 dark:border-pure-white/10 focus-within:border-theme-primary dark:focus-within:border-theme-primary focus-within:shadow-theme-primary/20 transition-all flex items-center">
             <input
               id={fileInputId}
               ref={fileInputRef}
@@ -205,7 +205,7 @@ export function ChatComposer({
                 <button
                   type="submit"
                   disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
-                  className="p-2 bg-electric-yellow hover:bg-vibrant-coral disabled:bg-neutral-gray dark:disabled:bg-neutral-gray disabled:cursor-not-allowed text-pure-black rounded-claude-sm transition-colors shadow-claude-sm"
+                  className="p-2 bg-theme-primary hover:bg-theme-primary-hover disabled:bg-neutral-gray dark:disabled:bg-neutral-gray disabled:cursor-not-allowed text-theme-primary-text rounded-claude-sm transition-colors shadow-claude-sm"
                   title="Send message"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

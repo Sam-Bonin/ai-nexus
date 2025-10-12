@@ -64,7 +64,7 @@ export function ModelSelector({ selectedModel, onSelect }: ModelSelectorProps) {
                 }}
                 className={`w-full text-left px-4 py-2.5 text-base font-sans transition-colors ${
                   model.id === selectedModel
-                    ? 'bg-electric-yellow/10 dark:bg-electric-yellow/20 text-electric-yellow dark:text-electric-yellow'
+                    ? 'bg-theme-primary/10 text-theme-primary'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5'
                 }`}
               >
@@ -81,7 +81,7 @@ export function ModelSelector({ selectedModel, onSelect }: ModelSelectorProps) {
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(prev => !prev)}
-        className="flex items-center gap-2 px-3 py-2 text-gray-900 dark:text-gray-100 hover:text-electric-yellow dark:hover:text-electric-yellow rounded-claude-sm hover:bg-pampas/50 dark:hover:bg-dark-bg/50 focus:outline-none transition-colors font-sans cursor-pointer text-base"
+        className="flex items-center gap-2 px-3 py-2 text-gray-900 dark:text-gray-100 hover:text-theme-primary rounded-claude-sm hover:bg-pampas/50 dark:hover:bg-dark-bg/50 focus:outline-none transition-colors font-sans cursor-pointer text-base"
       >
         <span>{selectedModelName}</span>
         <svg

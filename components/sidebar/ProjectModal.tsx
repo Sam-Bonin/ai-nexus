@@ -144,7 +144,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Frontend Development"
-                className="w-full px-3 py-2 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-electric-yellow/50 focus:border-electric-yellow"
+                className="w-full px-3 py-2 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-theme-primary/50 focus:border-theme-primary"
                 autoFocus
               />
             </div>
@@ -163,7 +163,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g., Building React applications and components"
                 rows={3}
-                className="w-full px-3 py-2 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-electric-yellow/50 focus:border-electric-yellow resize-none"
+                className="w-full px-3 py-2 bg-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm text-sm text-pure-black dark:text-pure-white placeholder:text-cloudy-500 dark:placeholder:text-cloudy-400 focus:outline-none focus:ring-2 focus:ring-theme-primary/50 focus:border-theme-primary resize-none"
               />
               <p className="text-xs text-neutral-gray dark:text-neutral-gray mt-1">
                 Be specific - this helps auto-categorize future conversations
@@ -211,7 +211,7 @@ export default function ProjectModal({ isOpen, onClose, onSave, project }: Proje
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-electric-yellow hover:bg-electric-yellow-600 text-pure-black rounded-claude-sm font-medium shadow-claude-sm transition-colors"
+                className="px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-pure-black rounded-claude-sm font-medium shadow-claude-sm transition-colors"
               >
                 {isEditing ? 'Save Changes' : 'Create Project'}
               </button>

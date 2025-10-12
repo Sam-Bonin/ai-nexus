@@ -1,3 +1,11 @@
+export type ColorPalette = 'yellow' | 'blue' | 'purple' | 'green' | 'pink';
+export type BrightnessMode = 'light' | 'dark' | 'system';
+
+export interface ThemeSettings {
+  brightness: BrightnessMode;
+  palette: ColorPalette;
+}
+
 export interface FileAttachment {
   name: string;
   type: string;
@@ -62,4 +70,3 @@ export interface Project {
   updatedAt: number;
 }
 
-export type Theme = 'light' | 'dark' | 'system';
