@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { NextRequest } from 'next/server';
 
 /**
- * GET /api/settings
+ * GET /api/setting-key
  * Check if API key exists and return masked information
  */
 export async function GET() {
@@ -34,7 +34,7 @@ export async function GET() {
 }
 
 /**
- * POST /api/settings
+ * POST /api/setting-key
  * Test and optionally save API key
  */
 export async function POST(req: NextRequest) {
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * DELETE /api/settings
+ * DELETE /api/setting-key
  * Clear the stored API key
  */
 export async function DELETE() {

@@ -205,10 +205,9 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('API Error:', error);
-
     // Handle API key not configured error
     if (error?.message?.includes('API key not configured')) {
+      console.log('Chat request without API key configured - returning 401');
       return new Response(
         JSON.stringify({
           error: 'API key not configured. Please set your OpenRouter API key in settings.',
@@ -220,6 +219,7 @@ export async function POST(req: NextRequest) {
 
     // Handle specific error cases
     if (error?.status === 401) {
+      console.error('Invalid API key - returning 401');
       return new Response(
         JSON.stringify({ error: 'Invalid API key', requiresSetup: true }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
@@ -227,13 +227,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (error?.status === 429) {
+      console.error('Rate limit exceeded - returning 429');
       return new Response(
         JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
         { status: 429, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Generic error response
+    // Generic error response - log full error for debugging
+    console.error('API Error:', error);
     return new Response(
       JSON.stringify({
         error: error?.message || 'An error occurred while processing your request'

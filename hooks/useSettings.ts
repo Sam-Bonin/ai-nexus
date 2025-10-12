@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 interface SettingsStatus {
   hasKey: boolean;
@@ -24,17 +24,17 @@ export function useSettings(): UseSettingsResult {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const openSettings = () => {
+  const openSettings = useCallback(() => {
     setIsOpen(true);
-  };
+  }, []);
 
-  const closeSettings = () => {
+  const closeSettings = useCallback(() => {
     setIsOpen(false);
-  };
+  }, []);
 
-  const refreshStatus = async (): Promise<void> => {
+  const refreshStatus = useCallback(async (): Promise<void> => {
     try {
-      const response = await fetch('/api/settings');
+      const response = await fetch('/api/setting-key');
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -48,14 +48,14 @@ export function useSettings(): UseSettingsResult {
       // Don't set error state for refresh failures to avoid disrupting UI
       setStatus(null);
     }
-  };
+  }, []);
 
-  const testKey = async (key: string): Promise<boolean> => {
+  const testKey = useCallback(async (key: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/settings', {
+      const response = await fetch('/api/setting-key', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,14 +77,14 @@ export function useSettings(): UseSettingsResult {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const saveKey = async (key: string): Promise<boolean> => {
+  const saveKey = useCallback(async (key: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/settings', {
+      const response = await fetch('/api/setting-key', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,14 +110,14 @@ export function useSettings(): UseSettingsResult {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [refreshStatus]);
 
-  const clearKey = async (): Promise<boolean> => {
+  const clearKey = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/settings', {
+      const response = await fetch('/api/setting-key', {
         method: 'DELETE',
       });
 
@@ -139,7 +139,7 @@ export function useSettings(): UseSettingsResult {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [refreshStatus]);
 
   return {
     isOpen,

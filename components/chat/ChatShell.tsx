@@ -8,8 +8,6 @@ import { ChatComposer } from './ChatComposer';
 import { ScrollToBottomButton } from './ScrollToBottomButton';
 import { useChatController } from '@/hooks/useChatController';
 import { useTheme } from '@/hooks/useTheme';
-import { useSettings } from '@/hooks/useSettings';
-import SettingsModal from '@/components/settings/SettingsModal';
 
 export function ChatShell() {
   const {
@@ -39,7 +37,6 @@ export function ChatShell() {
     setError,
   } = useChatController();
   useTheme(); // Initialize theme system
-  const settings = useSettings();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -54,17 +51,6 @@ export function ChatShell() {
     } else {
       setSidebarOpen(true);
     }
-  }, []);
-
-  // Check API key status on mount and auto-open settings if no key exists
-  useEffect(() => {
-    const checkApiKey = async () => {
-      await settings.refreshStatus();
-      if (!settings.status?.hasKey) {
-        settings.openSettings();
-      }
-    };
-    checkApiKey();
   }, []);
 
   useEffect(() => {
@@ -110,25 +96,11 @@ export function ChatShell() {
         event.preventDefault();
         toggleSidebar();
       }
-      if ((event.metaKey || event.ctrlKey) && event.key === ',') {
-        event.preventDefault();
-        settings.openSettings();
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNewChat, toggleSidebar, settings]);
-
-  // Listen for custom 'openSettings' event (e.g., from 401 errors)
-  useEffect(() => {
-    const handleOpenSettings = () => {
-      settings.openSettings();
-    };
-
-    window.addEventListener('openSettings', handleOpenSettings);
-    return () => window.removeEventListener('openSettings', handleOpenSettings);
-  }, [settings]);
+  }, [handleNewChat, toggleSidebar]);
 
   return (
     <div
@@ -160,8 +132,6 @@ export function ChatShell() {
           selectedModel={selectedModel}
           onSelectModel={setSelectedModel}
           onNewChat={handleNewChat}
-          onOpenSettings={settings.openSettings}
-          hasApiKey={settings.status?.hasKey ?? false}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -196,11 +166,6 @@ export function ChatShell() {
           clearError={() => setError(null)}
         />
       </div>
-
-      <SettingsModal
-        isOpen={settings.isOpen}
-        onClose={settings.closeSettings}
-      />
     </div>
   );
 }
