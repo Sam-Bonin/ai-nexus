@@ -162,7 +162,7 @@ export function ThemePreview({ brightness, palette }: ThemePreviewProps) {
                 }}
               >
                 <div className="text-[10px] leading-relaxed">
-                  Hello! I'm Claude. How can I help you today?
+                  Hello! I&apos;m Claude. How can I help you today?
                 </div>
               </div>
             </div>
