@@ -3,13 +3,17 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { PersonalizationSettings } from './PersonalizationSettings';
+import { AccountSettings } from './AccountSettings';
+import { APISettings } from './APISettings';
+import { PrivacySettings } from './PrivacySettings';
+import { AboutSettings } from './AboutSettings';
 
 interface SettingsMenuProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type SettingsScreen = 'personalization' | 'account' | 'general' | 'privacy' | 'about';
+type SettingsScreen = 'personalization' | 'account' | 'api' | 'privacy' | 'about';
 
 interface SettingsNavItem {
   id: SettingsScreen;
@@ -57,15 +61,15 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
       ),
     },
     {
-      id: 'general',
-      label: 'General',
+      id: 'api',
+      label: 'API',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
           />
         </svg>
       ),
@@ -165,24 +169,16 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                 <h3 className="text-xl font-semibold text-pure-black dark:text-pure-white mb-6">
                   Account
                 </h3>
-                <div className="flex items-center justify-center h-64">
-                  <p className="text-neutral-gray dark:text-neutral-gray italic">
-                    Coming soon
-                  </p>
-                </div>
+                <AccountSettings />
               </div>
             )}
 
-            {activeScreen === 'general' && (
+            {activeScreen === 'api' && (
               <div>
                 <h3 className="text-xl font-semibold text-pure-black dark:text-pure-white mb-6">
-                  General
+                  API
                 </h3>
-                <div className="flex items-center justify-center h-64">
-                  <p className="text-neutral-gray dark:text-neutral-gray italic">
-                    Coming soon
-                  </p>
-                </div>
+                <APISettings />
               </div>
             )}
 
@@ -191,11 +187,7 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                 <h3 className="text-xl font-semibold text-pure-black dark:text-pure-white mb-6">
                   Privacy & Security
                 </h3>
-                <div className="flex items-center justify-center h-64">
-                  <p className="text-neutral-gray dark:text-neutral-gray italic">
-                    Coming soon
-                  </p>
-                </div>
+                <PrivacySettings />
               </div>
             )}
 
@@ -204,11 +196,7 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
                 <h3 className="text-xl font-semibold text-pure-black dark:text-pure-white mb-6">
                   About
                 </h3>
-                <div className="flex items-center justify-center h-64">
-                  <p className="text-neutral-gray dark:text-neutral-gray italic">
-                    Coming soon
-                  </p>
-                </div>
+                <AboutSettings />
               </div>
             )}
           </div>
