@@ -9,6 +9,7 @@ import { ConversationListItem } from './ConversationListItem';
 import ProjectModal from './ProjectModal';
 import MoveConversationModal from './MoveConversationModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import { SettingsMenu } from '@/components/settings/SettingsMenu';
 
 interface SidebarShellProps {
   conversations: Conversation[];
@@ -41,6 +42,7 @@ export function SidebarShell({
   const [movingConversation, setMovingConversation] = useState<Conversation | null>(null);
   const [deleteProjectModalOpen, setDeleteProjectModalOpen] = useState(false);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
 
   useEffect(() => {
     setProjects(storage.getProjects());
@@ -134,7 +136,7 @@ export function SidebarShell({
 
   return (
     <aside
-      className={`relative h-full flex-shrink-0 bg-pure-white dark:bg-dark-gray transition-[transform,width] duration-300 ease-in-out ${
+      className={`relative h-full flex flex-col flex-shrink-0 bg-pure-white dark:bg-dark-gray transition-[transform,width] duration-300 ease-in-out ${
         isOpen ? 'w-72 translate-x-0 border-r border-pure-black/10 dark:border-pure-white/10 shadow-claude-md' : 'w-72 -translate-x-full md:w-0 md:translate-x-0 md:border-r-0 md:shadow-none'
       } font-sans overflow-hidden`}
     >
@@ -153,10 +155,10 @@ export function SidebarShell({
             <p className="text-xs text-neutral-gray dark:text-neutral-gray">Start a new chat to get started</p>
           </div>
         ) : !hasProjects && hasConversations ? (
-          <div className="px-4 py-6 text-center mb-4 bg-electric-yellow/5 dark:bg-electric-yellow/10 rounded-claude-md border border-electric-yellow/20">
+          <div className="px-4 py-6 text-center mb-4 bg-theme-primary/10 rounded-claude-md border border-theme-primary/20">
             <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">Create projects to auto-organize</p>
             <p className="text-xs text-neutral-gray dark:text-neutral-gray mb-3">Group conversations by topic for easy access</p>
-            <button onClick={handleCreateProject} className="text-xs text-electric-yellow hover:text-vibrant-coral font-medium transition-colors">
+            <button onClick={handleCreateProject} className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium transition-colors">
               + Create your first project
             </button>
           </div>
@@ -246,6 +248,20 @@ export function SidebarShell({
         )}
       </div>
 
+      {/* Settings Footer */}
+      <div className="p-4 border-t border-pure-black/10 dark:border-pure-white/10">
+        <button
+          onClick={() => setSettingsMenuOpen(true)}
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 rounded-claude-sm transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="text-sm font-medium">Settings</span>
+        </button>
+      </div>
+
       <ProjectModal
         isOpen={projectModalOpen}
         onClose={() => setProjectModalOpen(false)}
@@ -268,6 +284,11 @@ export function SidebarShell({
         onConfirm={handleDeleteProjectConfirm}
         title="Delete project"
         message="Deleting this project will move its conversations to the Miscellaneous section."
+      />
+
+      <SettingsMenu
+        isOpen={settingsMenuOpen}
+        onClose={() => setSettingsMenuOpen(false)}
       />
     </aside>
   );

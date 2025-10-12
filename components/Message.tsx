@@ -75,7 +75,7 @@ export default function Message({ message }: MessageProps) {
               onClick={() => setThinkingExpanded(!thinkingExpanded)}
               className="flex items-center gap-2 px-2 py-1 hover:bg-pure-black/5 dark:hover:bg-pure-white/5 rounded transition-colors"
             >
-              <svg className="w-4 h-4 text-electric-yellow dark:text-electric-yellow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-theme-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
               <span className="text-xs font-medium text-neutral-gray dark:text-neutral-gray">
@@ -127,7 +127,7 @@ export default function Message({ message }: MessageProps) {
                   />
                 ) : (
                   <div className="flex items-center gap-2 px-3 py-2 bg-pure-white dark:bg-dark-gray border border-pure-black/10 dark:border-pure-white/10 rounded-claude-sm">
-                    <svg className="w-6 h-6 text-electric-yellow dark:text-electric-yellow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 text-theme-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                     <div>
@@ -161,7 +161,7 @@ export default function Message({ message }: MessageProps) {
                     />
                   ) : (
                     <code
-                      className="bg-pure-white dark:bg-dark-gray/80 px-1.5 py-0.5 rounded text-sm font-mono text-electric-yellow dark:text-electric-yellow border border-pure-black/10 dark:border-pure-white/10"
+                      className="bg-pure-white dark:bg-dark-gray/80 px-1.5 py-0.5 rounded text-sm font-mono text-theme-primary border border-pure-black/10 dark:border-pure-white/10"
                       {...props}
                     >
                       {children}
@@ -196,7 +196,7 @@ export default function Message({ message }: MessageProps) {
                   </h3>
                 ),
                 blockquote: ({ children }) => (
-                  <blockquote className="border-l-4 border-electric-yellow/30 dark:border-electric-yellow/50 pl-4 italic my-4 text-gray-700 dark:text-neutral-gray">
+                  <blockquote className="border-l-4 border-theme-primary/30 pl-4 italic my-4 text-gray-700 dark:text-neutral-gray">
                     {children}
                   </blockquote>
                 ),
@@ -205,7 +205,7 @@ export default function Message({ message }: MessageProps) {
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-electric-yellow hover:text-vibrant-coral dark:text-electric-yellow dark:hover:text-vibrant-coral underline decoration-electric-yellow/30 hover:decoration-electric-yellow/80 underline-offset-2 transition-colors"
+                    className="text-theme-primary hover:text-theme-primary-hover underline decoration-theme-primary/30 hover:decoration-theme-primary/80 underline-offset-2 transition-colors"
                   >
                     {children}
                   </a>

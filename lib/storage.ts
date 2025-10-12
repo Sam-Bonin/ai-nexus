@@ -1,8 +1,9 @@
-import { Conversation, Project } from '@/types/chat';
+import { Conversation, Project, ThemeSettings, BrightnessMode, ColorPalette } from '@/types/chat';
 
 const CONVERSATIONS_KEY = 'claude-conversations';
 const ACTIVE_CONVERSATION_KEY = 'claude-active-conversation';
 const THEME_KEY = 'claude-theme';
+const THEME_SETTINGS_KEY = 'claude-theme-settings';
 const PROJECTS_KEY = 'claude-projects';
 
 export const storage = {
@@ -118,5 +119,40 @@ export const storage = {
       conversation.projectId = projectId;
       storage.saveConversation(conversation);
     }
+  },
+
+  // Theme Settings
+  getThemeSettings: (): ThemeSettings => {
+    if (typeof window === 'undefined') {
+      return { brightness: 'system', palette: 'yellow' };
+    }
+
+    const data = localStorage.getItem(THEME_SETTINGS_KEY);
+    return data
+      ? JSON.parse(data)
+      : { brightness: 'system', palette: 'yellow' };
+  },
+
+  setThemeSettings: (settings: ThemeSettings) => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(THEME_SETTINGS_KEY, JSON.stringify(settings));
+  },
+
+  getBrightness: (): BrightnessMode => {
+    return storage.getThemeSettings().brightness;
+  },
+
+  getPalette: (): ColorPalette => {
+    return storage.getThemeSettings().palette;
+  },
+
+  setBrightness: (brightness: BrightnessMode) => {
+    const current = storage.getThemeSettings();
+    storage.setThemeSettings({ ...current, brightness });
+  },
+
+  setPalette: (palette: ColorPalette) => {
+    const current = storage.getThemeSettings();
+    storage.setThemeSettings({ ...current, palette });
   },
 };

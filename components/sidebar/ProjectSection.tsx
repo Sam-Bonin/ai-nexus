@@ -62,7 +62,7 @@ export function ProjectSection({
             <span className="text-sm font-semibold text-pure-black dark:text-pure-white tracking-tight truncate">
               {project.name}
             </span>
-            <span className="px-2 py-0.5 rounded-full bg-electric-yellow/10 dark:bg-electric-yellow/20 text-xs font-medium text-pure-black dark:text-pure-white flex-shrink-0">
+            <span className="px-2 py-0.5 rounded-full bg-theme-primary/10 text-xs font-medium text-pure-black dark:text-pure-white flex-shrink-0">
               {conversations.length}
             </span>
           </div>
