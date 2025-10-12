@@ -2,43 +2,88 @@
 
 import { useEffect, useState } from 'react';
 import { storage } from '@/lib/storage';
-import { Theme } from '@/types/chat';
+import { ThemeSettings, BrightnessMode, ColorPalette } from '@/types/chat';
+import { COLOR_PALETTES } from '@/lib/colorPalettes';
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    // Initialize from localStorage immediately to avoid race condition
+  const [themeSettings, setThemeSettingsState] = useState<ThemeSettings>(() => {
     if (typeof window !== 'undefined') {
-      return storage.getTheme();
+      return storage.getThemeSettings();
     }
-    return 'system';
+    return { brightness: 'system', palette: 'yellow' };
   });
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+
+  const [resolvedBrightness, setResolvedBrightness] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
     const root = window.document.documentElement;
 
-    // Remove previous theme classes
+    // Apply brightness class
     root.classList.remove('light', 'dark');
+    let effectiveBrightness: 'light' | 'dark' = 'light';
 
-    let effectiveTheme: 'light' | 'dark' = 'light';
-
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+    if (themeSettings.brightness === 'system') {
+      effectiveBrightness = window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light';
-      effectiveTheme = systemTheme;
     } else {
-      effectiveTheme = theme;
+      effectiveBrightness = themeSettings.brightness;
     }
 
-    root.classList.add(effectiveTheme);
-    setResolvedTheme(effectiveTheme);
-  }, [theme]);
+    root.classList.add(effectiveBrightness);
+    setResolvedBrightness(effectiveBrightness);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    storage.setTheme(newTheme);
+    // Apply color palette as data attribute
+    root.setAttribute('data-palette', themeSettings.palette);
+
+    // Inject CSS variables for current palette
+    const colors = COLOR_PALETTES[themeSettings.palette];
+
+    // Helper to convert camelCase to kebab-case
+    const camelToKebab = (str: string) =>
+      str.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+
+    Object.entries(colors).forEach(([key, value]) => {
+      root.style.setProperty(`--color-${camelToKebab(key)}`, value);
+    });
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      if (themeSettings.brightness === 'system') {
+        const newBrightness = mediaQuery.matches ? 'dark' : 'light';
+        root.classList.remove('light', 'dark');
+        root.classList.add(newBrightness);
+        setResolvedBrightness(newBrightness);
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [themeSettings]);
+
+  const setThemeSettings = (settings: ThemeSettings) => {
+    setThemeSettingsState(settings);
+    storage.setThemeSettings(settings);
   };
 
-  return { theme, setTheme, resolvedTheme };
+  const setBrightness = (brightness: BrightnessMode) => {
+    setThemeSettings({ ...themeSettings, brightness });
+  };
+
+  const setPalette = (palette: ColorPalette) => {
+    setThemeSettings({ ...themeSettings, palette });
+  };
+
+  return {
+    themeSettings,
+    resolvedBrightness,
+    setThemeSettings,
+    setBrightness,
+    setPalette,
+    // Legacy support for components still using 'theme'
+    theme: themeSettings.brightness,
+    setTheme: setBrightness,
+    resolvedTheme: resolvedBrightness,
+  };
 }

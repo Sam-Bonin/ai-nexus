@@ -14,6 +14,13 @@
 
   --background: #FFFFFF;
   --foreground: #000000;
+
+  /* Dynamic color variables (RGB format for Tailwind opacity support) */
+  --color-primary: 255 213 15;
+  --color-primary-hover: 253 118 91;
+  --color-secondary: 253 118 91;
+  --color-primary-bg: 255 213 15;
+  --color-primary-text: 0 0 0;
 }
 
 .dark {
@@ -54,7 +61,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FFD50F;
+  background: rgb(var(--color-primary));
 }
 
 .dark ::-webkit-scrollbar-thumb {
@@ -62,7 +69,7 @@ body {
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #FFD50F;
+  background: rgb(var(--color-primary));
 }
 
 /* Animations */
@@ -96,7 +103,7 @@ input {
 
 /* Focus styles with Electric Yellow accent */
 *:focus-visible {
-  outline: 2px solid #FFD50F;
+  outline: 2px solid rgb(var(--color-primary));
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -143,16 +150,16 @@ input {
 }
 
 .prose a {
-  color: #FFD50F;
+  color: rgb(var(--color-primary));
   text-decoration: underline;
-  text-decoration-color: rgba(255, 213, 15, 0.3);
+  text-decoration-color: rgb(var(--color-primary) / 0.3);
   text-underline-offset: 2px;
   transition: text-decoration-color 200ms;
 }
 
 .prose a:hover {
-  color: #FD765B;
-  text-decoration-color: rgba(253, 118, 91, 0.8);
+  color: rgb(var(--color-primary-hover));
+  text-decoration-color: rgb(var(--color-primary-hover));
 }
 
 /* Loading animation */
@@ -183,7 +190,7 @@ button::after {
   width: 0;
   height: 0;
   border-radius: 50%;
-  background: rgba(255, 213, 15, 0.15);
+  background: rgb(var(--color-primary) / 0.08);
   transform: translate(-50%, -50%);
   transition: width 400ms, height 400ms;
 }
@@ -211,13 +218,13 @@ pre code {
 
 /* Selection colors with Electric Yellow */
 ::selection {
-  background-color: #FFD50F;
-  color: #000000;
+  background-color: rgb(var(--color-primary));
+  color: rgb(var(--color-primary-text));
 }
 
 .dark ::selection {
-  background-color: #FFD50F;
-  color: #000000;
+  background-color: rgb(var(--color-primary));
+  color: rgb(var(--color-primary-text));
 }
 
 /* Skeleton loading */
@@ -259,7 +266,7 @@ pre code {
 input:focus,
 textarea:focus {
   outline: none;
-  border-color: #FFD50F;
+  border-color: rgb(var(--color-primary));
 }
 
 /* Smooth page transitions */

@@ -30,8 +30,8 @@ export function AttachmentPreviewList({ attachments, onRemove }: AttachmentPrevi
               className="w-10 h-10 object-cover rounded"
             />
           ) : (
-            <div className="w-10 h-10 bg-electric-yellow/20 dark:bg-electric-yellow/30 rounded flex items-center justify-center">
-              <svg className="w-6 h-6 text-electric-yellow dark:text-electric-yellow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-10 h-10 bg-theme-primary/20 rounded flex items-center justify-center">
+              <svg className="w-6 h-6 text-theme-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
             </div>
@@ -43,7 +43,7 @@ export function AttachmentPreviewList({ attachments, onRemove }: AttachmentPrevi
           <button
             type="button"
             onClick={() => onRemove(index)}
-            className="absolute top-1 right-1 p-1 bg-electric-yellow hover:bg-vibrant-coral text-pure-black rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-1 right-1 p-1 bg-vibrant-coral hover:bg-vibrant-coral/80 text-pure-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

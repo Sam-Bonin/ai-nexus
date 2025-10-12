@@ -153,10 +153,10 @@ export function SidebarShell({
             <p className="text-xs text-neutral-gray dark:text-neutral-gray">Start a new chat to get started</p>
           </div>
         ) : !hasProjects && hasConversations ? (
-          <div className="px-4 py-6 text-center mb-4 bg-electric-yellow/5 dark:bg-electric-yellow/10 rounded-claude-md border border-electric-yellow/20">
+          <div className="px-4 py-6 text-center mb-4 bg-theme-primary/10 rounded-claude-md border border-theme-primary/20">
             <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-1">Create projects to auto-organize</p>
             <p className="text-xs text-neutral-gray dark:text-neutral-gray mb-3">Group conversations by topic for easy access</p>
-            <button onClick={handleCreateProject} className="text-xs text-electric-yellow hover:text-vibrant-coral font-medium transition-colors">
+            <button onClick={handleCreateProject} className="text-xs text-theme-primary hover:text-theme-primary-hover font-medium transition-colors">
               + Create your first project
             </button>
           </div>

@@ -8,6 +8,7 @@ import { ChatComposer } from './ChatComposer';
 import { ScrollToBottomButton } from './ScrollToBottomButton';
 import { useChatController } from '@/hooks/useChatController';
 import { useTheme } from '@/hooks/useTheme';
+import { COLOR_PALETTES } from '@/lib/colorPalettes';
 
 export function ChatShell() {
   const {
@@ -36,7 +37,7 @@ export function ChatShell() {
     loadConversation,
     setError,
   } = useChatController();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, themeSettings, resolvedBrightness } = useTheme();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -44,6 +45,17 @@ export function ChatShell() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Helper function to convert RGB string to rgba
+  const rgbToRgba = (rgb: string, alpha: number): string => {
+    return `rgba(${rgb}, ${alpha})`;
+  };
+
+  // Get colors from current palette
+  const colors = COLOR_PALETTES[themeSettings.palette];
+  const opacity = resolvedBrightness === 'dark' ? 0.04 : 0.08;
+  const primaryRgba = rgbToRgba(colors.primary, opacity);
+  const secondaryRgba = rgbToRgba(colors.secondary, opacity);
 
   useEffect(() => {
     if (window.innerWidth < 768) {
@@ -110,17 +122,17 @@ export function ChatShell() {
     <div
       className="fixed inset-0 flex overflow-hidden"
       style={{
-        background: theme === 'dark'
+        background: resolvedBrightness === 'dark'
           ? `
-            radial-gradient(circle at 20% 20%, rgba(255, 213, 15, 0.04) 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(253, 118, 91, 0.04) 0%, transparent 50%),
-            linear-gradient(135deg, rgba(255, 213, 15, 0.03) 0%, transparent 40%, rgba(253, 118, 91, 0.03) 100%),
+            radial-gradient(circle at 20% 20%, ${primaryRgba} 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, ${secondaryRgba} 0%, transparent 50%),
+            linear-gradient(135deg, ${rgbToRgba(colors.primary, 0.03)} 0%, transparent 40%, ${rgbToRgba(colors.secondary, 0.03)} 100%),
             #1a1a1a
           `
           : `
-            radial-gradient(circle at 20% 20%, rgba(255, 213, 15, 0.08) 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(253, 118, 91, 0.08) 0%, transparent 50%),
-            linear-gradient(135deg, rgba(255, 213, 15, 0.06) 0%, rgba(255, 255, 255, 1) 40%, rgba(253, 118, 91, 0.06) 100%),
+            radial-gradient(circle at 20% 20%, ${primaryRgba} 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, ${secondaryRgba} 0%, transparent 50%),
+            linear-gradient(135deg, ${rgbToRgba(colors.primary, 0.06)} 0%, rgba(255, 255, 255, 1) 40%, ${rgbToRgba(colors.secondary, 0.06)} 100%),
             #ffffff
           `,
       }}

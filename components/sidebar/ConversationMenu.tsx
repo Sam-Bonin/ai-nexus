@@ -113,7 +113,7 @@ export function ConversationMenu({
             onDelete(conversation.id);
             onClose();
           }}
-          className="w-full text-left px-4 py-2 text-sm text-electric-yellow dark:text-electric-yellow hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
+          className="w-full text-left px-4 py-2 text-sm text-vibrant-coral dark:text-vibrant-coral hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"
         >
           Delete
         </button>
