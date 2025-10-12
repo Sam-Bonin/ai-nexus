@@ -3,6 +3,7 @@
 import { useTheme } from '@/hooks/useTheme';
 import { BrightnessMode, ColorPalette } from '@/types/chat';
 import { COLOR_PALETTES, PALETTE_METADATA } from '@/lib/colorPalettes';
+import { ThemePreview } from './ThemePreview';
 
 export function PersonalizationSettings() {
   const { themeSettings, setBrightness, setPalette } = useTheme();
@@ -55,7 +56,7 @@ export function PersonalizationSettings() {
         <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
           Color Palette
         </label>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="flex gap-2 flex-wrap">
           {(Object.keys(COLOR_PALETTES) as ColorPalette[]).map((palette) => {
             const isSelected = themeSettings.palette === palette;
             const metadata = PALETTE_METADATA[palette];
@@ -65,46 +66,29 @@ export function PersonalizationSettings() {
               <button
                 key={palette}
                 onClick={() => setPalette(palette)}
-                className={`aspect-square rounded-claude-md transition-all flex items-center justify-center text-2xl ${
+                className={`w-8 h-8 rounded-full transition-all ${
                   isSelected
-                    ? 'ring-2 ring-offset-2 ring-theme-primary scale-110'
-                    : 'hover:scale-105 ring-1 ring-pure-black/10 dark:ring-pure-white/10'
+                    ? 'ring-2 ring-offset-2 ring-pure-black dark:ring-pure-white ring-offset-white dark:ring-offset-dark-gray scale-110'
+                    : 'hover:scale-105'
                 }`}
-                style={{
-                  backgroundColor: colors.primary,
-                  color: colors.primaryText,
-                }}
+                style={{ backgroundColor: `rgb(${colors.primary})` }}
                 title={metadata.name}
                 aria-label={`${metadata.name} palette`}
-              >
-                {isSelected ? '✓' : metadata.icon}
-              </button>
+              />
             );
           })}
         </div>
-        <p className="text-xs text-neutral-gray dark:text-neutral-gray mt-2 text-center">
-          {PALETTE_METADATA[themeSettings.palette].name}
-        </p>
       </div>
 
-      {/* Preview Section */}
-      <div className="p-4 bg-pure-black/5 dark:bg-pure-white/5 rounded-claude-md">
-        <p className="text-xs text-neutral-gray dark:text-neutral-gray mb-3 font-medium">
-          Preview
-        </p>
-        <div className="space-y-2">
-          <button className="w-full px-4 py-2 bg-theme-primary hover:bg-theme-primary-hover text-theme-primary-text rounded-claude-sm transition-colors font-medium shadow-claude-sm">
-            Primary Button
-          </button>
-          <div className="flex gap-2">
-            <button className="flex-1 px-3 py-2 bg-theme-primary/10 text-theme-primary rounded-claude-sm font-medium text-sm">
-              Active
-            </button>
-            <button className="flex-1 px-3 py-2 bg-pure-black/5 dark:bg-pure-white/5 hover:bg-pure-black/10 dark:hover:bg-pure-white/10 text-gray-700 dark:text-gray-300 rounded-claude-sm font-medium text-sm transition-colors">
-              Secondary
-            </button>
-          </div>
-        </div>
+      {/* Live Preview Section */}
+      <div>
+        <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+          Live Preview
+        </label>
+        <ThemePreview
+          brightness={themeSettings.brightness}
+          palette={themeSettings.palette}
+        />
       </div>
     </div>
   );

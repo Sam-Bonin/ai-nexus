@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { PersonalizationSettings } from './PersonalizationSettings';
+import { PersonalizationSettings } from './personalization/PersonalizationSettings';
 import { AccountSettings } from './AccountSettings';
 import { APISettings } from './APISettings';
 import { PrivacySettings } from './PrivacySettings';
@@ -114,7 +114,7 @@ export function SettingsMenu({ isOpen, onClose }: SettingsMenuProps) {
 
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-[210] p-4 pointer-events-none">
-        <div className="bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 w-full max-w-4xl h-[600px] flex overflow-hidden animate-in zoom-in-95 duration-200 pointer-events-auto">
+        <div className="bg-pure-white dark:bg-dark-gray rounded-claude-lg shadow-claude-lg border border-pure-black/10 dark:border-pure-white/10 w-full max-w-5xl h-[700px] flex overflow-hidden animate-in zoom-in-95 duration-200 pointer-events-auto">
 
           {/* Left Navigation */}
           <div className="w-64 border-r border-pure-black/10 dark:border-pure-white/10 p-4 flex flex-col">

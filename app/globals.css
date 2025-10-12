@@ -56,7 +56,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #999999;
+  background: rgb(var(--color-primary) / 0.6);
   border-radius: 4px;
 }
 
@@ -65,11 +65,21 @@ body {
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #999999;
+  background: rgb(var(--color-primary) / 0.7);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: rgb(var(--color-primary));
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--color-primary) / 0.6) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgb(var(--color-primary) / 0.7) transparent;
 }
 
 /* Animations */

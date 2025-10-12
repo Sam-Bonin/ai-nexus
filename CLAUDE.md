@@ -107,3 +107,7 @@ Available models defined in `types/chat.ts`:
 - LocalStorage keys: `conversations`, `activeConversationId`, `theme`
 - Message metadata includes token counts and response duration
 - Extended thinking mode adds reasoning parameter to API call, displays thinking separately
+
+
+## IMPORTANT
+- NEVER try and start up a server.
