@@ -1,5 +1,6 @@
 'use client';
 
+import { Settings } from 'lucide-react';
 import { ModelId, Theme } from '@/types/chat';
 import { ModelSelector } from './ModelSelector';
 
@@ -11,6 +12,8 @@ interface ChatHeaderProps {
   theme: Theme;
   onToggleTheme: () => void;
   onNewChat: () => void;
+  onOpenSettings: () => void;
+  hasApiKey: boolean;
 }
 
 export function ChatHeader({
@@ -21,6 +24,8 @@ export function ChatHeader({
   theme,
   onToggleTheme,
   onNewChat,
+  onOpenSettings,
+  hasApiKey,
 }: ChatHeaderProps) {
   return (
     <header className="sticky top-0 z-30 bg-pure-white/95 dark:bg-dark-gray/95 backdrop-blur border-b border-pure-black/10 dark:border-pure-white/10 px-4 py-3 flex justify-between items-center">
@@ -38,6 +43,20 @@ export function ChatHeader({
       </div>
 
       <div className="flex items-center gap-2">
+        <div className="relative">
+          <button
+            onClick={onOpenSettings}
+            className="p-2 text-neutral-gray dark:text-neutral-gray hover:text-electric-yellow dark:hover:text-electric-yellow rounded-lg hover:bg-pure-black/5 dark:hover:bg-pure-white/10 transition-colors"
+            aria-label="Settings"
+            title="Settings (⌘,)"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+          {!hasApiKey && (
+            <span className="absolute top-0 right-0 w-2 h-2 bg-yellow-500 rounded-full" />
+          )}
+        </div>
+
         <button
           onClick={onToggleTheme}
           className="p-2 text-neutral-gray dark:text-neutral-gray hover:text-electric-yellow dark:hover:text-electric-yellow rounded-claude-sm hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors"

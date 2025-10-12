@@ -203,8 +203,17 @@ export function useChatController(): UseChatControllerResult {
 
       storage.saveConversation(conversation);
       setConversations(storage.getConversations());
-    } catch (catError) {
+    } catch (catError: any) {
       console.error('Auto-categorization failed:', catError);
+
+      // Check for API key not configured error
+      if (catError?.message?.includes('API key not configured') ||
+          catError?.message?.includes('Invalid API key') ||
+          catError?.requiresSetup === true) {
+        setError('API key not configured. Please update your settings.');
+        window.dispatchEvent(new CustomEvent('openSettings'));
+      }
+
       const conversation = storage.getConversation(conversationId);
       if (conversation) {
         conversation.description = conversation.description || 'Untitled conversation';
@@ -256,8 +265,16 @@ export function useChatController(): UseChatControllerResult {
         setConversations(storage.getConversations());
         categorizeConversation(conversationId);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating title:', error);
+
+      // Check for API key not configured error
+      if (error?.message?.includes('API key not configured') ||
+          error?.message?.includes('Invalid API key') ||
+          error?.requiresSetup === true) {
+        setError('API key not configured. Please update your settings.');
+        window.dispatchEvent(new CustomEvent('openSettings'));
+      }
     }
   };
 
@@ -340,7 +357,17 @@ export function useChatController(): UseChatControllerResult {
         });
       } else {
         console.error('Error:', err);
-        setError(err.message || 'An error occurred. Please try again.');
+
+        // Check for API key not configured error
+        if (err?.message?.includes('API key not configured') ||
+            err?.message?.includes('Invalid API key') ||
+            err?.requiresSetup === true) {
+          setError('API key not configured. Please update your settings.');
+          window.dispatchEvent(new CustomEvent('openSettings'));
+        } else {
+          setError(err.message || 'An error occurred. Please try again.');
+        }
+
         setMessages(prev => {
           const next = [...prev];
           if (next[next.length - 1]?.role === 'assistant' && next[next.length - 1]?.content === '') {

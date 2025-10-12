@@ -32,7 +32,12 @@ export async function streamChatCompletion({
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `API error: ${response.status}`);
+    const error: any = new Error(errorData.error || `API error: ${response.status}`);
+    // Preserve requiresSetup flag for 401 errors
+    if (errorData.requiresSetup) {
+      error.requiresSetup = true;
+    }
+    throw error;
   }
 
   const reader = response.body?.getReader();
@@ -98,7 +103,12 @@ export async function generateConversationTitle(messages: Message[]): Promise<st
   });
 
   if (!response.ok) {
-    throw new Error('Failed to generate title');
+    const errorData = await response.json().catch(() => ({}));
+    const error: any = new Error(errorData.error || 'Failed to generate title');
+    if (errorData.requiresSetup) {
+      error.requiresSetup = true;
+    }
+    throw error;
   }
 
   const reader = response.body?.getReader();
@@ -130,7 +140,12 @@ export async function generateConversationDescription(messages: Message[]): Prom
   });
 
   if (!response.ok) {
-    throw new Error(`Description API failed: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    const error: any = new Error(errorData.error || `Description API failed: ${response.status}`);
+    if (errorData.requiresSetup) {
+      error.requiresSetup = true;
+    }
+    throw error;
   }
 
   const { description } = await response.json();
@@ -161,7 +176,12 @@ export async function matchProject(description: string, projects: Project[]): Pr
   });
 
   if (!response.ok) {
-    throw new Error(`Match API failed: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    const error: any = new Error(errorData.error || `Match API failed: ${response.status}`);
+    if (errorData.requiresSetup) {
+      error.requiresSetup = true;
+    }
+    throw error;
   }
 
   return response.json();

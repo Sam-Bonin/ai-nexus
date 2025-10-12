@@ -1,22 +1,15 @@
 import { NextRequest } from 'next/server';
-import OpenAI from 'openai';
 import type {
   ChatCompletionCreateParamsNonStreaming,
   ChatCompletionMessageParam,
 } from 'openai/resources/chat/completions';
-
-// Initialize OpenAI client with OpenRouter configuration
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.YOUR_SITE_URL || "http://localhost:3000",
-    "X-Title": process.env.YOUR_SITE_NAME || "AI Nexus",
-  }
-});
+import { getOpenAIClient } from '@/lib/openaiClient';
 
 export async function POST(req: NextRequest) {
   try {
+    // Initialize OpenAI client with hot-reload support
+    const openai = getOpenAIClient();
+
     // Parse the incoming request body
     const { messages } = await req.json();
 
@@ -89,10 +82,21 @@ ${messages.map((m: any) => `${m.role}: ${m.content}`).join('\n')}`
   } catch (error: any) {
     console.error('API Error:', error);
 
+    // Handle missing API key error
+    if (error?.message?.includes('API key not configured')) {
+      return new Response(
+        JSON.stringify({
+          error: 'API key not configured. Please set your OpenRouter API key in settings.',
+          requiresSetup: true
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Handle specific error cases
     if (error?.status === 401) {
       return new Response(
-        JSON.stringify({ error: 'Invalid API key' }),
+        JSON.stringify({ error: 'Invalid API key', requiresSetup: true }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       );
     }
