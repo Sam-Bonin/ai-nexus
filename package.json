@@ -3,16 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3000",
     "lint": "next lint"
   },
   "dependencies": {
+    "lucide-react": "^0.545.0",
     "next": "^14.2.18",
+    "openai": "^4.73.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "openai": "^4.73.1",
     "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "^15.6.1",
     "remark-gfm": "^4.0.0"
@@ -22,11 +23,11 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "typescript": "^5",
-    "tailwindcss": "^3.4.17",
-    "postcss": "^8",
     "autoprefixer": "^10.4.20",
     "eslint": "^8",
-    "eslint-config-next": "^14.2.18"
+    "eslint-config-next": "^14.2.18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
   }
 }

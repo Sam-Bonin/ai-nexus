@@ -1,19 +1,13 @@
 import { NextRequest } from 'next/server';
 import OpenAI from 'openai';
 import type { ChatCompletionCreateParamsStreaming } from 'openai/resources/chat/completions';
-
-// Initialize OpenAI client with OpenRouter configuration
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.YOUR_SITE_URL || "http://localhost:3000",
-    "X-Title": process.env.YOUR_SITE_NAME || "Claude AI Clone",
-  }
-});
+import { getOpenAIClient } from '@/lib/openaiClient';
 
 export async function POST(req: NextRequest) {
   try {
+    // Create OpenAI client with current API key (supports hot-reload)
+    const openai = getOpenAIClient();
+
     // Parse the incoming request body
     const { messages, model, thinking } = await req.json();
 
@@ -211,24 +205,37 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('API Error:', error);
+    // Handle API key not configured error
+    if (error?.message?.includes('API key not configured')) {
+      console.log('Chat request without API key configured - returning 401');
+      return new Response(
+        JSON.stringify({
+          error: 'API key not configured. Please set your OpenRouter API key in settings.',
+          requiresSetup: true
+        }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Handle specific error cases
     if (error?.status === 401) {
+      console.error('Invalid API key - returning 401');
       return new Response(
-        JSON.stringify({ error: 'Invalid API key' }),
+        JSON.stringify({ error: 'Invalid API key', requiresSetup: true }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
     if (error?.status === 429) {
+      console.error('Rate limit exceeded - returning 429');
       return new Response(
         JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
         { status: 429, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Generic error response
+    // Generic error response - log full error for debugging
+    console.error('API Error:', error);
     return new Response(
       JSON.stringify({
         error: error?.message || 'An error occurred while processing your request'
