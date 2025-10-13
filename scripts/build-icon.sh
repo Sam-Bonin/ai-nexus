@@ -20,7 +20,7 @@ echo -e "${YELLOW}🎨 AI Nexus Icon Generator${NC}"
 echo ""
 
 # Paths
-SOURCE_IMAGE="public/logo-light.png"
+SOURCE_IMAGE="app/icon.png"
 ICONSET_DIR="resources/icon.iconset"
 OUTPUT_ICON="resources/icon.icns"
 
