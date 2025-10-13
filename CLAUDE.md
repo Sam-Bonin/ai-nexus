@@ -4,110 +4,269 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Next.js 14+ clone of Claude.ai using OpenRouter API for Claude Sonnet 4.5, featuring streaming chat, conversation history, file attachments (images/PDFs), markdown rendering, and extended thinking mode.
+**AI Nexus** is a Next.js-based Claude.ai clone that uses OpenRouter API to access Claude models with streaming responses, file attachments (images/PDFs), and extended thinking mode. All data is stored client-side in localStorage—no database required.
 
-## Common Commands
+
+## IMPORTANT RULES 
+
+ 1. DO NOT run yarn dev. That is for me only. 
+ 2. If you are asked to do a task that will use a lot of tokens, use your task tool to offload the job to a sub agent. Make sure you give clear instructions and supporting considerations. Give full context. 
+ 3. You may not do hacky solutions if something doesn't work. Take your time, think about the correct solution and implement it correct using world class coding patterns.
+
+## Development Commands
 
 ```bash
-# Development (npm)
-npm run dev              # Start dev server on localhost:3000
-npm run build            # Production build
-npm start                # Start production server
-npm run lint             # Run ESLint
-
-# Development (yarn)
-yarn dev                 # Start dev server on localhost:3000
-yarn build               # Production build
-yarn start               # Start production server
-yarn lint                # Run ESLint
+# Development
+yarn dev              # Starts Next.js dev server on port 3000
 
 # Type checking
-npx tsc --noEmit        # Verify TypeScript types (npm)
-yarn tsc --noEmit       # Verify TypeScript types (yarn)
+yarn tsc --noEmit    # Run TypeScript type checker without emitting files
+
+# Linting
+yarn lint            # Run ESLint checks
+
+# Production
+yarn build           # Create production build
+yarn start           # Start production server on port 3000
 ```
 
-## Environment Setup
+## Architecture Overview
 
-Required `.env.local` file:
+### Three-Layer Architecture
+
+1. **Frontend (React/Next.js)**
+   - Components manage UI state, streaming responses, and localStorage
+   - Main components: `ChatShell`, `ChatComposer`, `ChatMessageList`, `SidebarShell`
+   - All state is ephemeral except what's saved to localStorage
+
+2. **Backend (Next.js API Routes)**
+   - `/app/api/chat/route.ts` - Main streaming endpoint for chat completions
+   - `/app/api/generate-title/route.ts` - Auto-generate conversation titles
+   - `/app/api/generate-description/route.ts` - Auto-generate conversation descriptions
+   - `/app/api/match-project/route.ts` - AI-powered project matching for conversations
+   - `/app/api/setting-key/route.ts` - Securely manage API keys in `.env.local`
+   - API routes proxy requests to OpenRouter and handle streaming
+
+3. **External (OpenRouter API)**
+   - Routes to Claude models from Anthropic
+   - Supports Claude Sonnet 4.5, 4, 3.7, 3.5, and Opus 4
+
+### Key Data Flow
+
 ```
-OPENROUTER_API_KEY=your-key-here
-YOUR_SITE_URL=http://localhost:3000
-YOUR_SITE_NAME=Claude AI Clone
+User Input → ChatComposer → /api/chat → OpenRouter → Claude
+                ↓                              ↓
+         localStorage ←── Streaming Response ←──
 ```
 
-## Architecture
+### Streaming Architecture
 
-### API Routes (`app/api/`)
+- **Server**: Uses OpenAI SDK's streaming (`stream: true`) and `ReadableStream` to forward chunks
+- **Client**: Uses `fetch()` + `TextDecoder` to read streamed chunks in real-time
+- **Abort handling**: `AbortController` cancels mid-stream requests when user stops generation
+- **Special delimiters**:
+  - `___THINKING___` prefix for reasoning/thinking content
+  - `___METADATA___` suffix with JSON containing tokens, duration, timestamp
 
-- **`chat/route.ts`**: Main streaming endpoint
-  - Transforms messages to support multimodal content (images, PDFs)
-  - Streams responses chunk-by-chunk using ReadableStream
-  - Embeds metadata with `___METADATA___` delimiter
-  - Embeds thinking content with `___THINKING___` delimiter when reasoning enabled
-  - Handles image_url format for file attachments (base64 encoded)
+### API Key Management
 
-- **`generate-title/route.ts`**: Auto-generates conversation titles from first exchange
-
-### Core Components (`components/`)
-
-- **`Chat.tsx`**: Main chat interface managing state, streaming, file uploads, model selection
-  - Handles AbortController for canceling requests
-  - Processes chunked streaming responses
-  - Manages localStorage for conversation persistence
-
-- **`Message.tsx`**: Renders individual messages with markdown, thinking blocks, metadata display
-
-- **`CodeBlock.tsx`**: Syntax-highlighted code blocks with copy functionality
-
-- **`Sidebar.tsx`**: Conversation history with rename/export/delete actions
-
-### State Management
-
-- Uses React useState for all state (no external state library)
-- LocalStorage for persistence via `lib/storage.ts`
-- Conversation format defined in `types/chat.ts`
-
-### Data Flow
-
-1. User submits message in `Chat.tsx`
-2. POST to `/api/chat` with messages array, optional model ID, thinking flag
-3. API transforms messages (handles file attachments), calls OpenRouter
-4. Response streams back, parsed in `Chat.tsx`:
-   - Regular content appended to assistant message
-   - `___THINKING___` prefix indicates reasoning content
-   - `___METADATA___` suffix contains token counts, duration, model
-5. Conversation saved to localStorage on completion
+- API keys are stored in `.env.local` for server-side security
+- `ApiKeyManager` singleton pattern with in-memory caching for hot-reload support
+- `getOpenAIClient()` factory function creates fresh OpenAI client per request
+- API key can be set/updated via `/api/setting-key` endpoint without restart
 
 ### File Attachments
 
-- Images and PDFs supported
-- Converted to base64 in client, sent as `files` array on message
-- API transforms to OpenRouter's `image_url` content format
-- Attachments stored in localStorage with conversation
+- Files converted to base64 in browser (`lib/file.ts`)
+- Sent as `files[]` array on message object
+- API route transforms to OpenRouter's `image_url` format for multimodal messages
+- Supports images (PNG, JPG, etc.) and PDFs
 
-### Model Selection
+### Storage Layer
 
-Available models defined in `types/chat.ts`:
-- `anthropic/claude-sonnet-4.5` (default)
-- `anthropic/claude-sonnet-4`
-- `anthropic/claude-3.7-sonnet`
-- `anthropic/claude-3.5-sonnet`
-- `anthropic/claude-opus-4`
+- **All data in localStorage** (no database)
+- Main keys: `claude-conversations`, `claude-active-conversation`, `claude-theme-settings`, `claude-projects`
+- `lib/storage.ts` provides type-safe localStorage wrappers
+- Projects organize conversations (null projectId = "Miscellaneous")
 
-### Styling
+## Project Structure
 
-- Tailwind CSS for all styling
-- Theme system in `hooks/useTheme.ts` (light/dark/system)
-- Custom animations in `app/globals.css`
+```
+app/
+├── api/                    # Next.js API routes (server-side)
+│   ├── chat/route.ts      # Streaming chat endpoint
+│   ├── generate-title/route.ts
+│   ├── generate-description/route.ts
+│   ├── match-project/route.ts
+│   └── setting-key/route.ts
+├── layout.tsx             # Root layout with theme provider
+├── page.tsx               # Main chat page
+└── globals.css            # Global styles + CSS variables
 
-## Key Implementation Details
+components/
+├── chat/                  # Chat interface components
+│   ├── ChatShell.tsx     # Main container, manages state & streaming
+│   ├── ChatComposer.tsx  # Input area with file attachments
+│   ├── ChatMessageList.tsx
+│   ├── ChatHeader.tsx
+│   ├── ModelSelector.tsx
+│   └── AttachmentPreviewList.tsx
+├── sidebar/               # Sidebar components
+│   ├── SidebarShell.tsx  # Main sidebar container
+│   ├── ProjectSection.tsx
+│   ├── ProjectModal.tsx
+│   ├── ConversationListItem.tsx
+│   ├── ConversationMenu.tsx
+│   └── MoveConversationModal.tsx
+├── settings/              # Settings UI
+│   ├── SettingsMenu.tsx
+│   ├── APISettings.tsx
+│   ├── AboutSettings.tsx
+│   ├── AccountSettings.tsx
+│   ├── PrivacySettings.tsx
+│   └── personalization/
+│       ├── ThemePreview.tsx
+│       └── PersonalizationSettings.tsx
+├── Message.tsx            # Message renderer with markdown
+└── CodeBlock.tsx          # Syntax-highlighted code blocks
 
-- Streaming uses TextEncoder/TextDecoder for chunk processing
-- AbortController pattern for canceling in-flight requests
-- LocalStorage keys: `conversations`, `activeConversationId`, `theme`
-- Message metadata includes token counts and response duration
-- Extended thinking mode adds reasoning parameter to API call, displays thinking separately
+lib/
+├── openaiClient.ts        # Factory for OpenAI client instances
+├── apiKeyManager.ts       # Singleton API key manager
+├── storage.ts             # localStorage helpers
+├── chatService.ts         # Chat API client functions
+├── file.ts                # File handling utilities
+├── format.ts              # Formatting utilities
+├── colorPalettes.ts       # Theme color definitions
+└── utils.ts               # General utilities
 
+types/
+└── chat.ts                # TypeScript interfaces for:
+                           # Message, Conversation, Project, Model, ThemeSettings, etc.
 
-## IMPORTANT
-- NEVER try and start up a server.
+hooks/
+└── useTheme.ts            # Theme management hook
+```
+
+## Design System
+
+### Colors
+- **Primary accents**: Electric Yellow (`#FFD50F`), Vibrant Coral (`#FD765B`)
+- **Theme system**: CSS variables with RGB format for dynamic palettes
+  - `theme-primary`, `theme-primary-hover`, `theme-secondary`
+  - Palettes: `yellow` (default), `blue`, `purple`, `green`, `pink`
+- **Neutrals**: Pure Black (`#000000`), Dark Gray (`#1A1A1A`), Pure White (`#FFFFFF`)
+- **Dark mode**: Use `dark:` prefix for Tailwind classes
+
+### Custom Tailwind Utilities
+- **Border radius**: `rounded-claude-sm` (8px), `rounded-claude-md` (12px), `rounded-claude-lg` (16px)
+- **Shadows**: `shadow-claude-sm`, `shadow-claude-md`, `shadow-claude-lg`
+- **Typography**: Custom font sizes like `text-body` (18px base), `text-hero` (96px), `text-section` (48px)
+- **Font weights**: `font-light` (300, default body), `font-medium` (500, UI elements)
+
+### Common Patterns
+```tsx
+// Hover with smooth transition
+hover:bg-pure-black/5 dark:hover:bg-pure-white/5 transition-colors
+
+// Borders with theme awareness
+border border-pure-black/10 dark:border-pure-white/10
+
+// Theme-aware dynamic colors
+bg-theme-primary text-theme-primary-text hover:bg-theme-primary-hover
+```
+
+## Type System
+
+All types defined in `types/chat.ts`:
+
+- **Message**: `{ role, content, thinking?, files?, metadata? }`
+- **Conversation**: `{ id, title, description?, messages[], projectId, createdAt, updatedAt }`
+- **Project**: `{ id, name, description, color, createdAt, updatedAt }`
+- **ThemeSettings**: `{ brightness: 'light'|'dark'|'system', palette: 'yellow'|'blue'|'purple'|'green'|'pink' }`
+- **ModelId**: Union type of available Claude models
+
+## Important Implementation Details
+
+### Component Architecture
+
+Components are organized by feature domain:
+- **`chat/`** - All chat UI components (composer, message list, header, etc.)
+- **`sidebar/`** - Sidebar and project management
+- **`settings/`** - Settings modal and panels
+
+Main state management happens in `ChatShell.tsx` which handles:
+- Message streaming
+- Conversation persistence
+- File attachment handling
+- Abort/cancel operations
+
+### Theme System
+
+- **Dual-axis theming**: Brightness (light/dark/system) + Color palette (5 options)
+- CSS variables in `globals.css` define `--color-primary`, `--color-secondary`, etc.
+- `useTheme.ts` hook manages theme state and applies classes to `<html>` element
+- Tailwind config uses RGB format: `rgb(var(--color-primary) / <alpha-value>)`
+
+### Modular Component Pattern
+
+Components are broken down into focused, single-responsibility modules:
+- **Shell components** (`ChatShell`, `SidebarShell`): Container logic and state management
+- **Presentational components**: UI rendering without complex state
+- **Feature components**: Self-contained features like `ModelSelector`, `ProjectModal`
+
+### API Route Patterns
+
+- All routes return JSON or streaming responses
+- Error handling includes status codes (401, 429, 500) with descriptive messages
+- API key validation happens in `getOpenAIClient()` factory
+- Streaming routes use `ReadableStream` with proper cleanup on abort
+
+## Environment Variables
+
+Required in `.env.local`:
+
+```env
+OPENROUTER_API_KEY=sk-or-v1-...    # Get from openrouter.ai
+YOUR_SITE_URL=http://localhost:3000 # Optional: for OpenRouter referrer
+YOUR_SITE_NAME=AI Nexus             # Optional: for OpenRouter headers
+```
+
+API key can also be set via Settings UI which calls `/api/setting-key` endpoint.
+
+## Features
+
+- **Streaming responses** with real-time UI updates
+- **Extended thinking mode** with separate reasoning display
+- **File attachments** (images, PDFs) with base64 encoding
+- **5 Claude models** selectable per conversation
+- **Projects** for organizing conversations with AI-powered auto-categorization
+- **Theme customization** with 5 color palettes + light/dark/system modes
+- **Export conversations** to Markdown or JSON
+- **Token usage tracking** with metadata per message
+- **Conversation management**: title generation, descriptions, move/delete operations
+
+## Common Tasks
+
+### Adding a New API Route
+
+1. Create `app/api/[name]/route.ts`
+2. Export `POST` or `GET` function
+3. Use `getOpenAIClient()` for API calls
+4. Handle errors with appropriate status codes
+5. Update `lib/chatService.ts` if adding client-side function
+
+### Adding a New Component
+
+1. Create in appropriate `components/` subdirectory
+2. Use TypeScript with proper typing from `types/chat.ts`
+3. Follow design system conventions (see STYLEGUIDE.md)
+4. Use theme-aware colors: `theme-primary`, `dark:` prefix
+5. Export from `index.ts` if creating a new module
+
+## Documentation
+
+Additional documentation in `docs/`:
+- `docs/features/` - Feature implementation plans and specs
+- `docs/refactor/` - Refactoring and architecture decisions
+

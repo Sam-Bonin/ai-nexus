@@ -1,0 +1,29 @@
+{
+  "appId": "com.ainexus.app",
+  "productName": "AI Nexus",
+  "directories": {
+    "output": "dist"
+  },
+  "files": [
+    "electron/**/*",
+    ".next/standalone/**/*",
+    "package.json",
+    "!electron/**/*.ts",
+    "!electron/tsconfig.json"
+  ],
+  "asar": true,
+  "asarUnpack": [
+    ".next/standalone/**/*"
+  ],
+  "mac": {
+    "target": "dir",
+    "icon": "resources/icon.icns",
+    "category": "public.app-category.productivity"
+  },
+  "extraResources": [
+    {
+      "from": "resources/icon.icns",
+      "to": "icon.icns"
+    }
+  ]
+}

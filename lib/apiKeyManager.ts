@@ -12,7 +12,7 @@ export class ApiKeyManager {
   private readonly ENV_KEY_NAME = 'OPENROUTER_API_KEY';
 
   private constructor() {
-    this.envFilePath = path.join(process.cwd(), '.env.local');
+    this.envFilePath = process.env.ENV_FILE_PATH || path.join(process.cwd(), '.env.local');
   }
 
   /**

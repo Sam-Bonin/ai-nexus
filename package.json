@@ -2,11 +2,17 @@
   "name": "claude-ai-clone",
   "version": "0.1.0",
   "private": true,
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "next lint"
+    "lint": "next lint",
+    "electron": "tsc -p electron/tsconfig.json && electron .",
+    "electron:dev": "tsc -p electron/tsconfig.json && electron .",
+    "build:next": "next build",
+    "build:electron": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && tsc -p electron/tsconfig.json && electron-builder",
+    "package": "yarn build:electron"
   },
   "dependencies": {
     "lucide-react": "^0.545.0",
@@ -24,6 +30,8 @@
     "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.13",
     "autoprefixer": "^10.4.20",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
     "eslint": "^8",
     "eslint-config-next": "^14.2.18",
     "postcss": "^8",
