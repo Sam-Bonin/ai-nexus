@@ -1,6 +1,6 @@
 # Prompt for Claude
 
-I want you to convert this Next.js Nexus AI repository into an Electron desktop application for macOS. This is a personal AI chat interface (similar to claude.ai but with custom features) that currently runs via `npm run dev` and opens in a browser. I want to transform it into a native Mac application that I can launch from my Applications folder like any other app - think Slack, VS Code, or Spotify.
+I want you to convert this Next.js Nexus AI repository into an Electron desktop application for macOS. This is a personal AI chat interface (similar to claude.ai but with custom features) that currently runs via `yarn dev` and opens in a browser. I want to transform it into a native Mac application that I can launch from my Applications folder like any other app - think Slack, VS Code, or Spotify.
 
 ## Why We're Doing This
 
@@ -8,7 +8,7 @@ I want you to convert this Next.js Nexus AI repository into an Electron desktop 
 
 **What I Want:**
 - A dedicated app window with its own Dock icon that I can Cmd+Tab to
-- The ability to double-click an icon to launch the app, rather than opening a terminal and running `npm run dev`
+- The ability to double-click an icon to launch the app, rather than opening a terminal and running `yarn dev`
 - An experience that feels like a "real" Mac application - isolated from my browser tabs, with its own localStorage, and a clean interface without browser chrome (no address bar, tabs, bookmarks bar)
 - The app to live in my Applications folder and behave like any other Mac app
 - Proper lifecycle management - when I Cmd+Q, everything shuts down cleanly
@@ -95,3 +95,12 @@ After thoroughly analyzing the repository and developing your implementation str
    - Configuration changes needed
 
 Only after we've discussed your analysis and strategy should you proceed with implementation. I want to make sure we're aligned on the approach before making changes to the codebase.
+
+
+## Future Considerations (Context Only)
+
+For context, this app may eventually:
+- Be deployed as a web app in addition to Electron
+- Migrate from localStorage to SQLite
+
+**For this implementation:** Don't over-engineer for these scenarios. Just keep Electron-specific code reasonably isolated (e.g., in the `electron/` directory) and avoid breaking the existing Next.js web architecture. We'll handle the storage layer refactor when we actually need it.
