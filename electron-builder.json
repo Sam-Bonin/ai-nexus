@@ -5,25 +5,26 @@
     "output": "dist"
   },
   "files": [
-    "electron/**/*",
-    ".next/standalone/**/*",
     "package.json",
+    "electron/**/*",
     "!electron/**/*.ts",
-    "!electron/tsconfig.json"
+    "!electron/tsconfig.json",
+    "!node_modules/**/*"
   ],
   "asar": true,
-  "asarUnpack": [
-    ".next/standalone/**/*"
+  "extraResources": [
+    {
+      "from": ".next/standalone",
+      "to": "standalone"
+    },
+    {
+      "from": "resources/icon.icns",
+      "to": "icon.icns"
+    }
   ],
   "mac": {
     "target": "dir",
     "icon": "resources/icon.icns",
     "category": "public.app-category.productivity"
-  },
-  "extraResources": [
-    {
-      "from": "resources/icon.icns",
-      "to": "icon.icns"
-    }
-  ]
+  }
 }

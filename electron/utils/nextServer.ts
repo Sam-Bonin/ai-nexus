@@ -164,7 +164,11 @@ export async function startNextServer(): Promise<string> {
   // Initialize logger first
   initLogger();
 
-  const PORT = 3000;
+  // Use different ports for dev vs production
+  // Dev: 3000 (matches yarn dev)
+  // Production: 54321 (safe port, unlikely to conflict)
+  const PORT = app.isPackaged ? 54321 : 3000;
+
   // Use 127.0.0.1 (IPv4) instead of localhost to avoid IPv6 connection issues
   const serverUrl = app.isPackaged
     ? `http://127.0.0.1:${PORT}`  // Production: force IPv4
@@ -178,42 +182,23 @@ export async function startNextServer(): Promise<string> {
   if (!app.isPackaged) {
     log('Development mode: connecting to existing dev server...');
 
-    // First check if port 3000 is occupied at all
-    const portAvailable = await isPortAvailable(PORT);
+    // Try to connect to the dev server via health check
+    try {
+      await waitForServer(serverUrl, 10000); // 10 second timeout in dev
+      log('✓ Connected to Next.js dev server');
+      return serverUrl;
+    } catch (error) {
+      // Could not connect to dev server
+      log(`ERROR: Could not connect to dev server: ${error}`, 'ERROR');
 
-    if (!portAvailable) {
-      // Port is occupied, check if it's AI Nexus
-      try {
-        await waitForServer(serverUrl, 10000); // 10 second timeout in dev
-        log('✓ Connected to Next.js dev server');
-        return serverUrl;
-      } catch (error) {
-        // Port is occupied but it's not AI Nexus
-        log(`ERROR: Port ${PORT} is occupied by non-AI Nexus application`, 'ERROR');
-
-        const pid = await getProcessOnPort(PORT);
-        const pidMessage = pid ? `\n\nProcess ID: ${pid}\nYou can kill it with: kill ${pid}` : '';
-
-        dialog.showErrorBox(
-          'Port 3000 Occupied',
-          `Port ${PORT} is already in use by another application.${pidMessage}\n\n` +
-          `If you want to run the dev server, please stop the application using port ${PORT} first, then run "yarn dev".\n\n` +
-          `Debug log: ${logFilePath}`
-        );
-        app.quit();
-        throw error;
-      }
-    } else {
-      // Port is free - user needs to start dev server
-      log('ERROR: Port 3000 is free but no dev server running', 'ERROR');
       dialog.showErrorBox(
-        'Dev Server Not Running',
-        `The Next.js dev server is not running.\n\n` +
-        `Please run "yarn dev" in another terminal before starting the Electron app.\n\n` +
-        `Debug log: ${logFilePath}`
+        'Cannot Connect',
+        `AI Nexus cannot connect to the development server.\n\n` +
+        `This is a development build and requires additional setup. ` +
+        `Please use the production version instead.`
       );
       app.quit();
-      throw new Error('Dev server not running');
+      throw error;
     }
   }
 
@@ -235,15 +220,14 @@ export async function startNextServer(): Promise<string> {
       // Not AI Nexus server - tell user to kill it
       log(`ERROR: Port ${PORT} is occupied by non-AI Nexus application`, 'ERROR');
 
-      // Try to get the process ID
-      const pid = await getProcessOnPort(PORT);
-      const pidMessage = pid ? `\n\nProcess ID: ${pid}\nYou can kill it with: kill ${pid}` : '';
-
       dialog.showErrorBox(
-        'Port 3000 Occupied',
-        `Port ${PORT} is already in use by another application.${pidMessage}\n\n` +
-        `Please stop the application using port ${PORT} and try again.\n\n` +
-        `Debug log: ${logFilePath}`
+        'Cannot Start AI Nexus',
+        `AI Nexus cannot start because another application is using the required port.\n\n` +
+        `Please close any other applications that might be using port ${PORT} and try again.\n\n` +
+        `Common apps that use this port:\n` +
+        `• Web development servers\n` +
+        `• Local testing tools\n` +
+        `• Other AI Nexus instances`
       );
       app.quit();
       throw new Error(`Port ${PORT} is occupied by non-AI Nexus application`);
@@ -251,26 +235,28 @@ export async function startNextServer(): Promise<string> {
   }
 
   // Step 2: Setup paths
-  // Handle ASAR packaging: unpacked files are in app.asar.unpacked directory
-  const appPath = app.getAppPath();
-  const baseDir = appPath.endsWith('.asar')
-    ? path.join(path.dirname(appPath), 'app.asar.unpacked')
-    : appPath;
+  // Development: Use project's .next/standalone
+  // Production: Use extraResources/standalone (official Electron API)
+  const standaloneDir = app.isPackaged
+    ? path.join(process.resourcesPath, 'standalone')
+    : path.join(app.getAppPath(), '.next', 'standalone');
 
-  log(`App path: ${appPath}`);
-  log(`Base directory for unpacked files: ${baseDir}`);
-
-  const standaloneDir = path.join(baseDir, '.next', 'standalone');
   const serverPath = path.join(standaloneDir, 'server.js');
+
+  log(`App packaged: ${app.isPackaged}`);
+  log(`Resources path: ${process.resourcesPath}`);
+  log(`Standalone directory: ${standaloneDir}`);
 
   // Step 3: Verify paths exist
   if (!verifyPaths(standaloneDir, serverPath)) {
     log('ERROR: Path verification failed', 'ERROR');
     dialog.showErrorBox(
-      'Configuration Error',
-      `The application files are not correctly configured.\n\n` +
-      `Please rebuild the application.\n\n` +
-      `Debug log: ${logFilePath}`
+      'Installation Error',
+      `AI Nexus may not be installed correctly.\n\n` +
+      `Please try:\n` +
+      `• Reinstalling the application\n` +
+      `• Downloading a fresh copy\n` +
+      `• Moving the app to your Applications folder`
     );
     app.quit();
     throw new Error('Path verification failed');
@@ -307,10 +293,10 @@ export async function startNextServer(): Promise<string> {
   } catch (spawnError) {
     log(`ERROR: Failed to spawn process: ${spawnError}`, 'ERROR');
     dialog.showErrorBox(
-      'Server Error',
-      `Failed to start the application server.\n\n` +
-      `Error: ${spawnError}\n\n` +
-      `Debug log: ${logFilePath}`
+      'Cannot Start AI Nexus',
+      `AI Nexus failed to start.\n\n` +
+      `Please try restarting the application. If the problem continues, ` +
+      `try restarting your computer or reinstalling AI Nexus.`
     );
     app.quit();
     throw spawnError;
@@ -330,10 +316,10 @@ export async function startNextServer(): Promise<string> {
   serverProcess.on('error', (error) => {
     log(`[Process Error] ${error.message}`, 'ERROR');
     dialog.showErrorBox(
-      'Server Error',
-      `Failed to start the application server.\n\n` +
-      `Error: ${error.message}\n\n` +
-      `Debug log: ${logFilePath}`
+      'Cannot Start AI Nexus',
+      `AI Nexus encountered an error while starting.\n\n` +
+      `Please try restarting the application. If the problem continues, ` +
+      `try restarting your computer or reinstalling AI Nexus.`
     );
     app.quit();
   });
@@ -343,10 +329,10 @@ export async function startNextServer(): Promise<string> {
 
     if (code !== 0 && code !== null) {
       dialog.showErrorBox(
-        'Server Crashed',
-        `The application server stopped unexpectedly.\n\n` +
-        `Exit code: ${code}\n\n` +
-        `Debug log: ${logFilePath}`
+        'AI Nexus Stopped',
+        `AI Nexus stopped unexpectedly.\n\n` +
+        `Please try restarting the application. If the problem continues, ` +
+        `please contact support or check for updates.`
       );
       app.quit();
     }
@@ -364,10 +350,12 @@ export async function startNextServer(): Promise<string> {
     stopNextServer();
 
     dialog.showErrorBox(
-      'Startup Timeout',
-      `The application server failed to start within 60 seconds.\n\n` +
-      `This may indicate a problem with the server configuration.\n\n` +
-      `Debug log: ${logFilePath}`
+      'Startup Failed',
+      `AI Nexus is taking longer than expected to start.\n\n` +
+      `Please try restarting the application. If this keeps happening:\n\n` +
+      `• Check that you have a stable internet connection\n` +
+      `• Make sure your computer isn't low on resources\n` +
+      `• Try restarting your computer`
     );
     app.quit();
     throw error;
