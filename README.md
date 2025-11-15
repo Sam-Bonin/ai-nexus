@@ -1,22 +1,60 @@
-# Nexus AI
+# AI Nexus
 
-A Next.js implementation of Claude.ai using OpenRouter API with streaming responses, file attachments, and extended thinking mode.
+A Claude.ai clone built with Next.js and OpenRouter API, featuring streaming responses, file attachments, and extended thinking mode.
 
-## Quick Start
+**Available in two implementations:**
+- **Web Application** - Deploy to Vercel, Netlify, or run locally
+- **Electron Desktop App** - Native macOS application (standalone, no browser required)
+
+## Choose Your Implementation
+
+### Web Application
+
+Run AI Nexus as a web app (development or production deployment):
 
 ```bash
-
 # Set up environment variables
 cp .env.example .env.local
 # Add your OPENROUTER_API_KEY to .env.local
 
-# Start dev server (choose one)
-npm run dev
-# or
+# Start dev server
 yarn dev
+
+# Visit http://localhost:3000
 ```
 
-Visit `http://localhost:3000`
+See [Web App Deployment](#deployment) for production hosting options.
+
+### Electron Desktop App (macOS)
+
+Run AI Nexus as a native macOS desktop application:
+
+```bash
+# Development (requires two terminals)
+# Terminal 1: Start Next.js dev server
+yarn dev
+
+# Terminal 2: Launch Electron wrapper
+yarn electron
+```
+
+**Production (Standalone App):**
+```bash
+# Build standalone .app
+yarn build:electron
+
+# Output: dist/mac/AI Nexus.app
+# Double-click to launch, or copy to /Applications
+```
+
+**Key Differences:**
+- **Web App**: Runs in browser, requires Node.js server, deploy anywhere
+- **Electron**: Native macOS app, no browser needed, self-contained with embedded server
+- **API Keys**: Web uses `.env.local`, Electron uses `~/Library/Application Support/AI Nexus/.env.local`
+- **Data Storage**: Web uses browser localStorage, Electron uses app-specific localStorage
+- **Ports**: Web uses 3000, Electron uses 3000 (dev) or 54321 (production)
+
+See [electron/README.md](electron/README.md) for complete Electron documentation.
 
 ## Environment Variables
 
@@ -115,12 +153,33 @@ Data Flow:
 
 ## Development
 
+### Common Commands (Both Implementations)
+
 ```bash
-yarn dev             # Start dev server
-yarn build           # Production build
-yarn start           # Start production server
 yarn lint            # Run ESLint
 yarn tsc --noEmit    # Type check
+```
+
+### Web App Commands
+
+```bash
+yarn dev             # Start Next.js dev server (port 3000)
+yarn build           # Build for production
+yarn start           # Start production server
+```
+
+### Electron App Commands
+
+```bash
+# Development
+yarn dev             # Terminal 1: Start Next.js dev server
+yarn electron        # Terminal 2: Launch Electron (connects to dev server)
+
+# Production
+yarn build:electron  # Build standalone .app (output: dist/mac/AI Nexus.app)
+
+# TypeScript Compilation (Electron code only)
+npx tsc -p electron/tsconfig.json
 ```
 
 ## Tech Stack
@@ -130,6 +189,7 @@ yarn tsc --noEmit    # Type check
 - **Tailwind CSS** - Styling
 - **OpenRouter API** - Claude Sonnet 4.5 via OpenAI SDK
 - **react-markdown** + **react-syntax-highlighter** - Message rendering
+- **Electron** (optional) - Native macOS desktop app wrapper
 
 ## Features
 
@@ -200,6 +260,15 @@ components/
 │       └── ThemePreview.tsx
 ├── Message.tsx                     # Message renderer with markdown
 └── CodeBlock.tsx                   # Syntax-highlighted code blocks
+
+electron/                           # Electron desktop app (optional)
+├── main.ts                         # Main process, window management
+├── preload.ts                      # Preload script (minimal)
+├── tsconfig.json                   # Electron-specific TypeScript config
+└── utils/
+    ├── nextServer.ts              # Next.js server lifecycle management
+    ├── menu.ts                    # macOS menu bar
+    └── appIcon.ts                 # Icon path resolution
 
 types/
 └── chat.ts                         # TypeScript interfaces
@@ -491,7 +560,9 @@ Components are organized by feature domain with a clear separation of concerns:
 
 ## Deployment
 
-### Vercel (Recommended)
+### Web App Deployment
+
+**Vercel (Recommended):**
 
 ```bash
 # Push to GitHub
@@ -504,6 +575,35 @@ vercel
 ```
 
 Add environment variables in Vercel dashboard.
+
+**Other Platforms:**
+- **Netlify**: Supports Next.js with automatic builds
+- **Railway**: One-click deployment with environment variables
+- **Self-hosted**: Use `yarn build && yarn start` on any Node.js server
+
+### Electron App Distribution
+
+**Building the App:**
+```bash
+yarn build:electron
+# Output: dist/mac/AI Nexus.app (~500-700MB)
+```
+
+**Sharing with Others:**
+1. **Manual Distribution**: Zip the `.app` file and share directly
+   ```bash
+   cd dist/mac
+   zip -r "AI Nexus.zip" "AI Nexus.app"
+   ```
+2. **Installation**: Recipients drag `AI Nexus.app` to `/Applications` folder
+3. **First Launch**: macOS may require right-click → Open for unsigned apps
+
+**Future Distribution Options:**
+- **DMG Installer**: Change `electron-builder.json` target from `"dir"` to `"dmg"`
+- **Code Signing**: Add Apple Developer certificate for trusted distribution
+- **Auto-updates**: Integrate electron-updater for automatic updates
+
+See [electron/README.md](electron/README.md) for detailed build and packaging information.
 
 ## Troubleshooting
 
@@ -567,6 +667,29 @@ lsof -ti:3000 | xargs kill
 # Or use different port
 yarn dev -p 3001
 ```
+
+### Electron App Issues
+
+**App Won't Launch from /Applications:**
+- Check debug log: `cat ~/Library/Application\ Support/AI\ Nexus/debug.log`
+- Verify standalone build exists: `ls .next/standalone/server.js`
+- Try rebuilding: `yarn build:electron`
+
+**Port Conflict in Production:**
+- Electron uses port 54321 in production
+- Check if occupied: `lsof -ti:54321`
+- Kill process: `kill -9 $(lsof -ti:54321)`
+
+**Development Mode Issues:**
+- Ensure `yarn dev` is running before launching Electron
+- Check that dev server is on port 3000
+- Try: Terminal 1 `yarn dev`, Terminal 2 `yarn electron`
+
+**Module Not Found Errors:**
+- Compile Electron TypeScript: `npx tsc -p electron/tsconfig.json`
+- Ensure dependencies installed: `yarn install`
+
+See [electron/README.md](electron/README.md) for comprehensive Electron troubleshooting.
 
 ## Contributing
 
@@ -646,6 +769,8 @@ See `STYLEGUIDE.md` for complete documentation.
 
 - **CLAUDE.md** - AI-focused developer documentation
 - **STYLEGUIDE.md** - Complete design system reference
+- **electron/README.md** - Electron desktop app documentation
+- **docs/electron/** - Electron implementation plans and context
 - **docs/features/** - Feature implementation plans
 - **docs/refactor/** - Architecture decisions
 
