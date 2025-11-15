@@ -77,31 +77,16 @@ function isPortAvailable(port: number): Promise<boolean> {
 }
 
 /**
- * Kill any orphaned node processes on port 3000
+ * Get the process ID running on a specific port
  */
-function killOrphanedProcesses(port: number): Promise<void> {
+function getProcessOnPort(port: number): Promise<string | null> {
   return new Promise((resolve) => {
-    log(`Checking for orphaned processes on port ${port}...`);
-
-    // Use lsof to find process using the port
     exec(`lsof -ti:${port}`, (error, stdout, stderr) => {
       if (error || !stdout.trim()) {
-        log('No orphaned processes found');
-        resolve();
+        resolve(null);
         return;
       }
-
-      const pid = stdout.trim();
-      log(`Found process ${pid} on port ${port}, attempting to kill...`, 'WARN');
-
-      exec(`kill -9 ${pid}`, (killError) => {
-        if (killError) {
-          log(`Failed to kill process ${pid}: ${killError.message}`, 'ERROR');
-        } else {
-          log(`Successfully killed orphaned process ${pid}`);
-        }
-        resolve();
-      });
+      resolve(stdout.trim());
     });
   });
 }
@@ -192,39 +177,80 @@ export async function startNextServer(): Promise<string> {
   // Development mode: assume yarn dev is already running
   if (!app.isPackaged) {
     log('Development mode: connecting to existing dev server...');
-    try {
-      await waitForServer(serverUrl, 10000); // 10 second timeout in dev
-      log('✓ Connected to Next.js dev server');
-      return serverUrl;
-    } catch (error) {
-      log(`ERROR: Dev server not detected: ${error}`, 'ERROR');
-      console.error('Next.js dev server not detected. Please run "yarn dev" in another terminal.');
+
+    // First check if port 3000 is occupied at all
+    const portAvailable = await isPortAvailable(PORT);
+
+    if (!portAvailable) {
+      // Port is occupied, check if it's AI Nexus
+      try {
+        await waitForServer(serverUrl, 10000); // 10 second timeout in dev
+        log('✓ Connected to Next.js dev server');
+        return serverUrl;
+      } catch (error) {
+        // Port is occupied but it's not AI Nexus
+        log(`ERROR: Port ${PORT} is occupied by non-AI Nexus application`, 'ERROR');
+
+        const pid = await getProcessOnPort(PORT);
+        const pidMessage = pid ? `\n\nProcess ID: ${pid}\nYou can kill it with: kill ${pid}` : '';
+
+        dialog.showErrorBox(
+          'Port 3000 Occupied',
+          `Port ${PORT} is already in use by another application.${pidMessage}\n\n` +
+          `If you want to run the dev server, please stop the application using port ${PORT} first, then run "yarn dev".\n\n` +
+          `Debug log: ${logFilePath}`
+        );
+        app.quit();
+        throw error;
+      }
+    } else {
+      // Port is free - user needs to start dev server
+      log('ERROR: Port 3000 is free but no dev server running', 'ERROR');
+      dialog.showErrorBox(
+        'Dev Server Not Running',
+        `The Next.js dev server is not running.\n\n` +
+        `Please run "yarn dev" in another terminal before starting the Electron app.\n\n` +
+        `Debug log: ${logFilePath}`
+      );
       app.quit();
-      throw error;
+      throw new Error('Dev server not running');
     }
   }
 
   // Production mode: spawn the Next.js standalone server
   log('Production mode: spawning standalone server...');
 
-  // Step 1: Check for orphaned processes
-  await killOrphanedProcesses(PORT);
-
-  // Step 2: Check port availability
+  // Step 1: Check port availability
   const portAvailable = await isPortAvailable(PORT);
   if (!portAvailable) {
-    log(`ERROR: Port ${PORT} is not available`, 'ERROR');
-    dialog.showErrorBox(
-      'Port Conflict',
-      `Port ${PORT} is already in use by another application.\n\n` +
-      `Please close any other applications using this port and try again.\n\n` +
-      `Debug log: ${logFilePath}`
-    );
-    app.quit();
-    throw new Error(`Port ${PORT} is not available`);
+    log(`Port ${PORT} is occupied, checking if it's AI Nexus...`, 'WARN');
+
+    // Check if the server on port 3000 is AI Nexus (maybe dev server is running)
+    try {
+      await checkServer(serverUrl);
+      log('✓ AI Nexus server already running on port 3000, will connect to it');
+      // AI Nexus is already running, just connect to it (like dev mode)
+      return serverUrl;
+    } catch (error) {
+      // Not AI Nexus server - tell user to kill it
+      log(`ERROR: Port ${PORT} is occupied by non-AI Nexus application`, 'ERROR');
+
+      // Try to get the process ID
+      const pid = await getProcessOnPort(PORT);
+      const pidMessage = pid ? `\n\nProcess ID: ${pid}\nYou can kill it with: kill ${pid}` : '';
+
+      dialog.showErrorBox(
+        'Port 3000 Occupied',
+        `Port ${PORT} is already in use by another application.${pidMessage}\n\n` +
+        `Please stop the application using port ${PORT} and try again.\n\n` +
+        `Debug log: ${logFilePath}`
+      );
+      app.quit();
+      throw new Error(`Port ${PORT} is occupied by non-AI Nexus application`);
+    }
   }
 
-  // Step 3: Setup paths
+  // Step 2: Setup paths
   // Handle ASAR packaging: unpacked files are in app.asar.unpacked directory
   const appPath = app.getAppPath();
   const baseDir = appPath.endsWith('.asar')
@@ -237,7 +263,7 @@ export async function startNextServer(): Promise<string> {
   const standaloneDir = path.join(baseDir, '.next', 'standalone');
   const serverPath = path.join(standaloneDir, 'server.js');
 
-  // Step 4: Verify paths exist
+  // Step 3: Verify paths exist
   if (!verifyPaths(standaloneDir, serverPath)) {
     log('ERROR: Path verification failed', 'ERROR');
     dialog.showErrorBox(
@@ -250,7 +276,7 @@ export async function startNextServer(): Promise<string> {
     throw new Error('Path verification failed');
   }
 
-  // Step 5: Setup environment
+  // Step 4: Setup environment
   const env = {
     ...process.env,
     PATH: `${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin:/usr/bin`,
@@ -265,7 +291,7 @@ export async function startNextServer(): Promise<string> {
   log(`  NODE_ENV: ${env.NODE_ENV}`);
   log(`  PATH: ${env.PATH}`);
 
-  // Step 6: Spawn the server
+  // Step 5: Spawn the server
   log('Spawning node process...');
   log(`  Command: node ${serverPath}`);
   log(`  Working directory: ${standaloneDir}`);
@@ -290,7 +316,7 @@ export async function startNextServer(): Promise<string> {
     throw spawnError;
   }
 
-  // Step 7: Handle server output
+  // Step 6: Handle server output
   serverProcess.stdout?.on('data', (data) => {
     const output = data.toString().trim();
     log(`[Next.js stdout] ${output}`);
@@ -326,7 +352,7 @@ export async function startNextServer(): Promise<string> {
     }
   });
 
-  // Step 8: Wait for server to be ready
+  // Step 7: Wait for server to be ready
   log('Waiting for server to respond...');
   try {
     await waitForServer(serverUrl, 60000); // 60 second timeout in production
@@ -381,15 +407,46 @@ async function waitForServer(url: string, timeoutMs: number): Promise<void> {
 }
 
 /**
- * Check if the server is responding (any HTTP response means it's ready)
+ * Check if the server is responding and verify it's the AI Nexus Next.js server
  * @param url - Server URL to check
  */
 function checkServer(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const request = http.get(url, (response) => {
-      // Any response (even 404) means server is running
+    // Check the /api/health endpoint to verify it's our Next.js app
+    const healthUrl = `${url}/api/health`;
+
+    const request = http.get(healthUrl, (response) => {
       log(`Server check: HTTP ${response.statusCode}`);
-      resolve();
+
+      // Only accept 200 responses
+      if (response.statusCode !== 200) {
+        reject(new Error(`Health check returned ${response.statusCode}`));
+        return;
+      }
+
+      // Collect response body
+      let data = '';
+      response.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      response.on('end', () => {
+        try {
+          // Parse and verify the response
+          const parsed = JSON.parse(data);
+
+          if (parsed.app === 'ai-nexus' && parsed.status === 'ok') {
+            log(`✓ Health check passed: AI Nexus server verified`);
+            resolve();
+          } else {
+            log(`✗ Health check failed: Not AI Nexus server (got: ${JSON.stringify(parsed)})`, 'WARN');
+            reject(new Error('Server is not AI Nexus application'));
+          }
+        } catch (error) {
+          log(`✗ Health check failed: Invalid JSON response`, 'WARN');
+          reject(new Error('Invalid health check response'));
+        }
+      });
     });
 
     request.on('error', (error) => {
