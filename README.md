@@ -195,14 +195,18 @@ See [docs/distribution/](./docs/distribution/) for detailed release process.
 
 ## Contributing
 
-We welcome contributions! Before submitting:
+We welcome contributions! Please read our [Contributing Guide](./CONTRIBUTING.md) to get started.
 
-1. **Type check:** `yarn tsc --noEmit`
-2. **Lint:** `yarn lint`
-3. **Build:** `yarn build`
-4. **Test:** Try your changes in both web and Electron modes
+**Quick Links:**
+- [Open an Issue](https://github.com/Sam-Bonin/ai-nexus/issues/new)
+- [Start a Discussion](https://github.com/Sam-Bonin/ai-nexus/discussions)
+- [View Open Issues](https://github.com/Sam-Bonin/ai-nexus/issues)
 
-Read [CLAUDE.md](./CLAUDE.md) for architecture details and coding standards.
+Before submitting a PR, please:
+1. Fork the repository and create a new branch
+2. Follow the code standards in [CONTRIBUTING.md](./CONTRIBUTING.md)
+3. Test your changes in both web and Electron modes
+4. Ensure `yarn tsc --noEmit` and `yarn lint` pass
 
 ## License
 
