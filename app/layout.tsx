@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { COLOR_PALETTES } from '@/lib/colorPalettes';
+import { UpdateBanner } from '@/components/UpdateBanner';
 
 export const metadata: Metadata = {
   title: "Claude AI Clone",
@@ -61,6 +62,8 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        {/* Update notification banner (Electron only) */}
+        <UpdateBanner />
         {children}
       </body>
     </html>

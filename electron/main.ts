@@ -1,8 +1,9 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import path from 'path';
 import { startNextServer, stopNextServer } from './utils/nextServer';
 import { createApplicationMenu, registerGlobalShortcuts, unregisterGlobalShortcuts } from './utils/menu';
 import { getAppIconPath } from './utils/appIcon';
+import { checkForUpdates } from './utils/updateChecker';
 
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
@@ -73,6 +74,39 @@ function getLoadingScreenHTML(): string {
 }
 
 /**
+ * Setup IPC handlers for renderer communication
+ *
+ * Handles requests from the renderer process (React components)
+ * via the contextBridge exposed in preload.ts
+ */
+function setupIpcHandlers(): void {
+  /**
+   * Handle update check request
+   *
+   * Checks GitHub Releases API for newer versions.
+   * Returns UpdateInfo if available, null otherwise.
+   */
+  ipcMain.handle('check-for-updates', async () => {
+    try {
+      return await checkForUpdates();
+    } catch (error) {
+      console.error('Update check failed:', error);
+      return null;
+    }
+  });
+
+  /**
+   * Handle open URL request
+   *
+   * Opens specified URL in user's default browser.
+   * Used for opening GitHub releases page.
+   */
+  ipcMain.on('open-url', (event, url: string) => {
+    shell.openExternal(url);
+  });
+}
+
+/**
  * Create the main application window
  */
 async function createWindow(): Promise<void> {
@@ -137,6 +171,9 @@ app.whenReady().then(async () => {
 
   // Register global shortcuts (DevTools: Cmd+Option+I)
   registerGlobalShortcuts();
+
+  // Setup IPC handlers for renderer communication
+  setupIpcHandlers();
 
   // Create main window
   await createWindow();

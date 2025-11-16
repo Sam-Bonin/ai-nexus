@@ -44,11 +44,14 @@ export interface PlatformInfo {
  * @returns Platform information object
  */
 export function usePlatform(): PlatformInfo {
+  // Initialize with synchronous check to avoid hydration mismatch
+  const initialIsElectron = typeof window !== 'undefined' ? checkIsElectron() : false;
+
   const [isReady, setIsReady] = useState(false);
   const [platformInfo, setPlatformInfo] = useState<PlatformInfo>({
-    isElectron: false,
-    isWeb: true,
-    platform: 'web',
+    isElectron: initialIsElectron,
+    isWeb: !initialIsElectron,
+    platform: initialIsElectron ? 'electron' : 'web',
     isReady: false
   });
 

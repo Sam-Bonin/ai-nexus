@@ -35,14 +35,6 @@ Drag **AI Nexus** to the **Applications** folder shortcut.
 
 The app will copy to `/Applications/AI Nexus.app` (~254MB installed)
 
-### 4. Eject the DMG
-
-After installation completes:
-1. Right-click the mounted DMG volume in Finder
-2. Select "Eject"
-
-Or drag the DMG volume to the Trash.
-
 ## First Launch
 
 ### Bypass Gatekeeper (Required - One Time Only)
@@ -51,7 +43,7 @@ Because AI Nexus is not code-signed with an Apple Developer certificate, macOS G
 
 **Follow these steps to allow the app:**
 
-1. Try to open **AI Nexus** from the **Applications** folder (it will be blocked)
+1. Try to open **AI Nexus** from the **Applications** folder (it will be blocked). Don't click "Move to Trash". 
 2. A dialog appears saying the app cannot be opened
 3. Open **System Settings** (or **System Preferences** on older macOS)
 4. Go to **Privacy & Security**
@@ -61,12 +53,6 @@ Because AI Nexus is not code-signed with an Apple Developer certificate, macOS G
 8. Confirm by clicking **"Open"** in the dialog that appears
 
 **After this one-time step**, the app will launch normally from Launchpad, Spotlight, or double-clicking.
-
-**Alternative method (if you don't see the Security section):**
-1. Open **Finder** → **Applications**
-2. **Right-click** (or Control-click) on **AI Nexus**
-3. Select **"Open"** from the menu
-4. Click **"Open"** in the security dialog
 
 ### Loading Screen
 
