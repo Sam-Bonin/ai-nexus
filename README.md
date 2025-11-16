@@ -6,6 +6,16 @@ A Claude.ai clone built with Next.js and OpenRouter API, featuring streaming res
 - **Web Application** - Deploy to Vercel, Netlify, or run locally
 - **Electron Desktop App** - Native macOS application (standalone, no browser required)
 
+## Download for macOS
+
+**[Download AI Nexus v1.0.0 for macOS](https://github.com/Sam-Bonin/ai-nexus/releases/download/v1.0.0/AI.Nexus-1.0.0.dmg)** (102MB)
+
+Native desktop app. No browser required. Get started in 5 minutes.
+
+📖 **[Installation Guide](./docs/distribution/INSTALL.md)** | 🚀 **[Quick Start](./docs/distribution/QUICK-START.md)**
+
+---
+
 ## Choose Your Implementation
 
 ### Web Application
