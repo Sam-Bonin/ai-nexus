@@ -7,11 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **AI Nexus** is a Next.js-based Claude.ai clone that uses OpenRouter API to access Claude models with streaming responses, file attachments (images/PDFs), and extended thinking mode. All data is stored client-side in localStorage—no database required.
 
 
-## IMPORTANT RULES 
+## IMPORTANT RULES
 
- 1. DO NOT run yarn dev. That is for me only. 
- 2. If you are asked to do a task that will use a lot of tokens, use your task tool to offload the job to a sub agent. Make sure you give clear instructions and supporting considerations. Give full context. 
+ 1. DO NOT run yarn dev. That is for me only.
+ 2. If you are asked to do a task that will use a lot of tokens, use your task tool to offload the job to a sub agent. Make sure you give clear instructions and supporting considerations. Give full context.
  3. You may not do hacky solutions if something doesn't work. Take your time, think about the correct solution and implement it correct using world class coding patterns.
+ 4. **Shared Codebase Philosophy**: AI Nexus supports both web and Electron implementations using a single shared codebase. When implementing features, ALWAYS build them in a way that works for both environments. NEVER create parallel implementations or fork components for different platforms. Keep the Electron wrapper (`electron/` directory) minimal - it should only handle window management and server lifecycle, never business logic. All features, components, and UI should be platform-agnostic and live in the shared `app/`, `components/`, and `lib/` directories.
 
 ## Development Commands
 
