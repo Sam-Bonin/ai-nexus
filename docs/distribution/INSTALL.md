@@ -49,19 +49,24 @@ Or drag the DMG volume to the Trash.
 
 Because AI Nexus is not code-signed with an Apple Developer certificate, macOS Gatekeeper will block it on first launch.
 
-**⚠️ DO NOT double-click the app on first launch - it will fail!**
+**Follow these steps to allow the app:**
 
-Instead, follow these steps:
-
-1. Open **Finder** → **Applications**
-2. Locate **AI Nexus**
-3. **Right-click** (or Control-click) on **AI Nexus**
-4. Select **"Open"** from the menu
-5. A security dialog appears:
-   - Message: *"AI Nexus cannot be opened because it is from an unidentified developer"*
-   - Click **"Open"** button
+1. Try to open **AI Nexus** from the **Applications** folder (it will be blocked)
+2. A dialog appears saying the app cannot be opened
+3. Open **System Settings** (or **System Preferences** on older macOS)
+4. Go to **Privacy & Security**
+5. Scroll down to the **Security** section
+6. You'll see a message: *"AI Nexus was blocked from use because it is not from an identified developer"*
+7. Click **"Open Anyway"** button
+8. Confirm by clicking **"Open"** in the dialog that appears
 
 **After this one-time step**, the app will launch normally from Launchpad, Spotlight, or double-clicking.
+
+**Alternative method (if you don't see the Security section):**
+1. Open **Finder** → **Applications**
+2. **Right-click** (or Control-click) on **AI Nexus**
+3. Select **"Open"** from the menu
+4. Click **"Open"** in the security dialog
 
 ### Loading Screen
 
@@ -90,9 +95,15 @@ The app is now ready to use!
 
 ### "Cannot be opened because the developer cannot be verified"
 
-**Symptom**: Dialog appears when double-clicking the app.
+**Symptom**: Dialog appears when trying to open the app.
 
-**Solution**: Use the Gatekeeper bypass (right-click → Open) described above.
+**Solution**:
+1. Go to **System Settings** → **Privacy & Security**
+2. Scroll to the **Security** section
+3. Click **"Open Anyway"** next to the AI Nexus message
+4. Confirm by clicking **"Open"**
+
+**Alternative**: Right-click on AI Nexus in Applications → Select "Open" → Click "Open" in dialog
 
 **Why this happens**: AI Nexus is not code-signed with an Apple Developer certificate ($99/year). This is normal for unsigned open-source apps.
 

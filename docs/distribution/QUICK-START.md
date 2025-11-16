@@ -12,13 +12,16 @@ Get up and running with AI Nexus in 5 minutes.
 
 ## 2. First Launch (Important!)
 
-**⚠️ Don't double-click!** macOS will block unsigned apps.
+**⚠️ macOS will block the app on first launch** because it's not code-signed.
 
-Instead:
-1. Go to **Applications** folder
-2. **Right-click** on **AI Nexus**
-3. Select **"Open"**
-4. Click **"Open"** in the security dialog
+**To open it:**
+1. Try to open **AI Nexus** from Applications (it will be blocked)
+2. Open **System Settings** → **Privacy & Security**
+3. Scroll to **Security** section
+4. Click **"Open Anyway"** next to the AI Nexus message
+5. Click **"Open"** to confirm
+
+**Alternative**: Right-click AI Nexus → Select "Open" → Click "Open"
 
 After this one-time step, the app launches normally.
 
