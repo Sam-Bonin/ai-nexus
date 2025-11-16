@@ -23,7 +23,7 @@
     }
   ],
   "mac": {
-    "target": "dir",
+    "target": ["dir", "dmg"],
     "icon": "resources/icon.icns",
     "category": "public.app-category.productivity"
   }

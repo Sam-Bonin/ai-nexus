@@ -27,6 +27,9 @@ yarn-error.log*
 # local env files
 .env.local
 
+# Also ignore any .env files that might end up in standalone
+.next/standalone/.env*
+
 # vercel
 .vercel
 

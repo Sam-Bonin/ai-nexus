@@ -1,6 +1,6 @@
 {
-  "name": "claude-ai-clone",
-  "version": "0.1.0",
+  "name": "ai-nexus",
+  "version": "1.0.0",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "electron": "tsc -p electron/tsconfig.json && electron .",
     "electron:dev": "tsc -p electron/tsconfig.json && electron .",
     "build:next": "next build",
-    "build:electron": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && tsc -p electron/tsconfig.json && electron-builder",
+    "build:electron": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && rm -f .next/standalone/.env.local && tsc -p electron/tsconfig.json && electron-builder",
     "package": "yarn build:electron"
   },
   "dependencies": {
