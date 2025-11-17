@@ -1,5 +1,5 @@
 import { app, dialog } from 'electron';
-import { spawn, ChildProcess } from 'child_process';
+import { spawn, fork, ChildProcess } from 'child_process';
 import { exec } from 'child_process';
 import path from 'path';
 import http from 'http';
@@ -277,21 +277,23 @@ export async function startNextServer(): Promise<string> {
   log(`  NODE_ENV: ${env.NODE_ENV}`);
   log(`  PATH: ${env.PATH}`);
 
-  // Step 5: Spawn the server
-  log('Spawning node process...');
-  log(`  Command: node ${serverPath}`);
+  // Step 5: Spawn the server using Electron's embedded Node.js
+  log('Spawning Next.js server process using Electron Node.js...');
+  log(`  Server script: ${serverPath}`);
   log(`  Working directory: ${standaloneDir}`);
 
   try {
-    serverProcess = spawn('node', [serverPath], {
+    // Use fork() instead of spawn('node') to use Electron's embedded Node.js
+    // This makes the app self-contained - no external Node.js installation required
+    serverProcess = fork(serverPath, [], {
       cwd: standaloneDir,
       env,
-      stdio: 'pipe'
+      silent: true  // Redirect child stdout/stderr to parent
     });
 
-    log(`✓ Process spawned with PID: ${serverProcess.pid}`);
+    log(`✓ Process forked with PID: ${serverProcess.pid}`);
   } catch (spawnError) {
-    log(`ERROR: Failed to spawn process: ${spawnError}`, 'ERROR');
+    log(`ERROR: Failed to fork process: ${spawnError}`, 'ERROR');
     dialog.showErrorBox(
       'Cannot Start AI Nexus',
       `AI Nexus failed to start.\n\n` +
