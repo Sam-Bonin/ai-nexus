@@ -37,12 +37,6 @@ Implement user onboarding experience and modal dialogs.
   - **Window Menu:** Minimize, zoom, bring all to front
   - **Help Menu:** Documentation, report bug, check for updates
 
-### 3.4. Auto-Updates ⭐️ PRIORITY
-
-- **Current:** Users must manually download new versions
-- **Missing:** electron-updater integration for automatic updates
-- **Impact:** Users won't get bug fixes or new features without manual effort
-
 ### 3.5. Native System Notifications
 
 - **Current:** No notifications
